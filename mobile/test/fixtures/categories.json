@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "name": "Classroom",
+    "code": "classroom",
+    "description": ""
+  },
+  {
+    "id": 2,
+    "name": "IT",
+    "code": "it",
+    "description": ""
+  },
+  {
+    "id": 3,
+    "name": "Maintenance",
+    "code": "maintenance",
+    "description": ""
+  },
+  {
+    "id": 4,
+    "name": "Examination",
+    "code": "examination",
+    "description": ""
+  },
+  {
+    "id": 5,
+    "name": "Other",
+    "code": "other",
+    "description": ""
+  }
+]

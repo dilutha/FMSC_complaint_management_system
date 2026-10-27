@@ -1,0 +1,106 @@
+[
+  {
+    "type": "status_change",
+    "at": "2026-10-27T17:53:24.490260Z",
+    "title": "Submitted",
+    "body": "Case submitted.",
+    "from_status": null,
+    "to_status": "submitted",
+    "actor": {
+      "id": 1,
+      "name": "You"
+    },
+    "is_internal": false
+  },
+  {
+    "type": "status_change",
+    "at": "2026-10-27T17:53:26.197267Z",
+    "title": "Under Review",
+    "body": "",
+    "from_status": "submitted",
+    "to_status": "under_review",
+    "actor": {
+      "id": null,
+      "name": "Faculty administrator"
+    },
+    "is_internal": false
+  },
+  {
+    "type": "status_change",
+    "at": "2026-10-27T17:53:26.565340Z",
+    "title": "Assigned",
+    "body": "Assigned to Maintenance Division.",
+    "from_status": "under_review",
+    "to_status": "assigned",
+    "actor": {
+      "id": null,
+      "name": "Faculty administrator"
+    },
+    "is_internal": false
+  },
+  {
+    "type": "update",
+    "at": "2026-10-27T17:53:27.013579Z",
+    "title": "Progress update",
+    "body": "Plumber fixed the pipe",
+    "kind": "progress",
+    "actor": {
+      "id": null,
+      "name": "Responsible authority"
+    },
+    "is_internal": false,
+    "attachment_ids": []
+  },
+  {
+    "type": "update",
+    "at": "2026-10-27T17:53:27.030588Z",
+    "title": "Resolution note",
+    "body": "Replaced the cracked pipe section.",
+    "kind": "resolution",
+    "actor": {
+      "id": null,
+      "name": "Responsible authority"
+    },
+    "is_internal": false,
+    "attachment_ids": []
+  },
+  {
+    "type": "status_change",
+    "at": "2026-10-27T17:53:27.040523Z",
+    "title": "Solved – Awaiting Verification",
+    "body": "Plumber fixed the pipe",
+    "from_status": "assigned",
+    "to_status": "solved",
+    "actor": {
+      "id": null,
+      "name": "Responsible authority"
+    },
+    "is_internal": false
+  },
+  {
+    "type": "update",
+    "at": "2026-10-27T17:53:27.520182Z",
+    "title": "Resolution verification",
+    "body": "Reported that the problem persists. Still dripping",
+    "kind": "verification",
+    "actor": {
+      "id": 1,
+      "name": "You"
+    },
+    "is_internal": false,
+    "attachment_ids": []
+  },
+  {
+    "type": "status_change",
+    "at": "2026-10-27T17:53:27.530583Z",
+    "title": "Reopened",
+    "body": "Still dripping",
+    "from_status": "solved",
+    "to_status": "reopened",
+    "actor": {
+      "id": 1,
+      "name": "You"
+    },
+    "is_internal": false
+  }
+]

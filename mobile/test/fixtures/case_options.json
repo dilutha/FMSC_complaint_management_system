@@ -1,0 +1,116 @@
+{
+  "case_types": [
+    {
+      "value": "complaint",
+      "label": "Complaint"
+    },
+    {
+      "value": "suggestion",
+      "label": "Suggestion"
+    }
+  ],
+  "priorities": [
+    {
+      "value": "urgent",
+      "label": "Urgent"
+    },
+    {
+      "value": "normal",
+      "label": "Normal"
+    }
+  ],
+  "statuses": [
+    {
+      "value": "submitted",
+      "label": "Submitted"
+    },
+    {
+      "value": "under_review",
+      "label": "Under Review"
+    },
+    {
+      "value": "waiting_for_information",
+      "label": "Waiting for Information"
+    },
+    {
+      "value": "assigned",
+      "label": "Assigned"
+    },
+    {
+      "value": "in_progress",
+      "label": "In Progress"
+    },
+    {
+      "value": "solved",
+      "label": "Solved – Awaiting Verification"
+    },
+    {
+      "value": "closed",
+      "label": "Closed"
+    },
+    {
+      "value": "rejected",
+      "label": "Rejected"
+    },
+    {
+      "value": "reopened",
+      "label": "Reopened"
+    }
+  ],
+  "update_kinds": [
+    {
+      "value": "comment",
+      "label": "Comment"
+    },
+    {
+      "value": "progress",
+      "label": "Progress update"
+    },
+    {
+      "value": "information_request",
+      "label": "Information requested"
+    },
+    {
+      "value": "information_response",
+      "label": "Information provided"
+    },
+    {
+      "value": "resolution",
+      "label": "Resolution note"
+    },
+    {
+      "value": "verification",
+      "label": "Resolution verification"
+    }
+  ],
+  "link_types": [
+    {
+      "value": "possible_duplicate",
+      "label": "Possible duplicate"
+    },
+    {
+      "value": "duplicate",
+      "label": "Duplicate"
+    },
+    {
+      "value": "related",
+      "label": "Related"
+    }
+  ],
+  "attachments": {
+    "allowed_extensions": [
+      "jpeg",
+      "jpg",
+      "mov",
+      "mp4",
+      "png",
+      "webm",
+      "webp"
+    ],
+    "max_image_bytes": 5242880,
+    "max_video_bytes": 52428800,
+    "max_per_case": 10
+  },
+  "verification_window_days": 7,
+  "reopen_window_days": 14
+}

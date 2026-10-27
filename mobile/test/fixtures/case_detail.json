@@ -1,0 +1,71 @@
+{
+  "id": 1,
+  "case_number": "FMSC-2026-00001",
+  "title": "Water leak near corridor",
+  "case_type": "complaint",
+  "category": {
+    "id": 3,
+    "name": "Maintenance",
+    "code": "maintenance",
+    "description": ""
+  },
+  "priority": "urgent",
+  "status": "reopened",
+  "status_label": "Reopened",
+  "location": "Building B corridor",
+  "assigned_authority": {
+    "id": 1,
+    "name": "Maintenance Division",
+    "code": "maintenance",
+    "unit": ""
+  },
+  "created_at": "2026-10-27T23:23:24.472363+05:30",
+  "updated_at": "2026-10-27T23:23:27.547162+05:30",
+  "deadline_at": "2026-10-29T23:23:27.525960+05:30",
+  "is_overdue": false,
+  "age_days": 0,
+  "description": "Water is leaking from the ceiling near the corridor.",
+  "requested_priority": "urgent",
+  "submitted_by": {
+    "id": 1,
+    "display_name": "smoke_student",
+    "role": "student"
+  },
+  "solved_at": "2026-10-27T23:23:27.030588+05:30",
+  "closed_at": null,
+  "verification_due_at": null,
+  "reopen_count": 1,
+  "attachments": [
+    {
+      "id": 1,
+      "original_name": "leak.png",
+      "content_type": "image/png",
+      "size": 72,
+      "kind": "evidence",
+      "created_at": "2026-10-27T23:23:24.522699+05:30",
+      "download_url": "https://api.example.test/api/v1/cases/1/attachments/1/download/"
+    }
+  ],
+  "latest_resolution": {
+    "id": 1,
+    "note": "Replaced the cracked pipe section.",
+    "resolved_at": "2026-10-27T23:23:27.030588+05:30",
+    "outcome": "disputed",
+    "submitter_feedback": "Still dripping",
+    "outcome_at": "2026-10-27T23:23:27.525960+05:30"
+  },
+  "allowed_actions": {
+    "transitions": [],
+    "can_assign": false,
+    "can_verify_resolution": false,
+    "can_reopen": false,
+    "can_comment": true,
+    "can_add_internal_note": false,
+    "can_change_deadline": false,
+    "can_reclassify": false,
+    "can_view_duplicates": false
+  },
+  "viewer_capacities": [
+    "submitter"
+  ]
+}
