@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Django
+backend/private_media/
+backend/staticfiles/
+*.sqlite3
+
+# Environment / secrets
+.env
+*.env
+!.env.example
+
+# Flutter / Dart
+mobile/.dart_tool/
+mobile/build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/pubspec.lock.bak
+mobile/**/GeneratedPluginRegistrant.*
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/ios/Pods/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
