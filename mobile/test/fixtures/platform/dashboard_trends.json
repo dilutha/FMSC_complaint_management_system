@@ -1,0 +1,22 @@
+{
+  "filters": {
+    "date_from": null,
+    "date_to": null,
+    "category": null,
+    "priority": null,
+    "case_type": null,
+    "status": [],
+    "authority": null,
+    "location": ""
+  },
+  "generated_at": "2026-10-29T16:11:08.664253+00:00",
+  "interval": "day",
+  "series": [
+    {
+      "period": "2026-10-29",
+      "submitted": 2,
+      "solved": 0,
+      "closed": 0
+    }
+  ]
+}

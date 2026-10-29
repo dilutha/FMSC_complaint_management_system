@@ -1,0 +1,33 @@
+{
+  "filters": {
+    "date_from": null,
+    "date_to": null,
+    "category": null,
+    "priority": null,
+    "case_type": null,
+    "status": [],
+    "authority": null,
+    "location": ""
+  },
+  "generated_at": "2026-10-29T16:11:08.660237+00:00",
+  "note": "Workload counts show how many cases each unit currently holds. Volume depends on the kind of issues a unit handles and is not, on its own, a measure of the unit's performance.",
+  "results": [
+    {
+      "authority": {
+        "id": 2,
+        "name": "Maintenance Division",
+        "is_active": true
+      },
+      "active": 1,
+      "not_started": 0,
+      "in_progress": 1,
+      "waiting_for_information": 0,
+      "reopened": 0,
+      "awaiting_verification": 0,
+      "resolved": 0,
+      "overdue": 0,
+      "average_open_age_days": 0.0,
+      "median_resolution_days": null
+    }
+  ]
+}

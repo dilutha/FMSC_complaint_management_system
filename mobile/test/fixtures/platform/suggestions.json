@@ -1,0 +1,25 @@
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 4,
+      "case_number": "FMSC-2026-00002",
+      "title": "Add charging points in the library",
+      "category": "Classroom",
+      "location": "Library",
+      "created_at": "2026-10-29T21:41:08.425970+05:30",
+      "case_status": "in_progress",
+      "case_status_label": "In Progress",
+      "status": "accepted",
+      "status_label": "Accepted for Implementation",
+      "responsible_unit": {
+        "id": 2,
+        "name": "Maintenance Division"
+      },
+      "target_date": null,
+      "progress_percent": 40
+    }
+  ]
+}

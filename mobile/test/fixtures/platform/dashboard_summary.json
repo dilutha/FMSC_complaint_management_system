@@ -1,0 +1,194 @@
+{
+  "filters": {
+    "date_from": null,
+    "date_to": null,
+    "category": null,
+    "priority": null,
+    "case_type": null,
+    "status": [],
+    "authority": null,
+    "location": ""
+  },
+  "generated_at": "2026-10-29T16:11:08.653584+00:00",
+  "totals": {
+    "total": 2,
+    "complaints": 1,
+    "suggestions": 1,
+    "open": 2,
+    "attempted": 1,
+    "not_attempted": 1,
+    "not_started": 0,
+    "awaiting_verification": 0,
+    "closed": 0,
+    "rejected": 0,
+    "urgent": 1,
+    "normal": 1,
+    "overdue": 0
+  },
+  "rates": {
+    "overdue": {
+      "value": 0.0,
+      "numerator": 0,
+      "denominator": 2
+    },
+    "resolution": {
+      "value": 0.0,
+      "numerator": 0,
+      "denominator": 2
+    },
+    "reopening": {
+      "value": null,
+      "numerator": 0,
+      "denominator": 0
+    },
+    "repeat_issue": {
+      "value": 0.0,
+      "numerator": 0,
+      "denominator": 2
+    }
+  },
+  "timings": {
+    "first_response_hours": {
+      "median": 0.0,
+      "average": 0.0,
+      "sample_size": 1
+    },
+    "resolution_days": {
+      "median": null,
+      "average": null,
+      "sample_size": 0
+    }
+  },
+  "by_status": [
+    {
+      "value": "submitted",
+      "label": "Submitted",
+      "count": 1
+    },
+    {
+      "value": "under_review",
+      "label": "Under Review",
+      "count": 0
+    },
+    {
+      "value": "waiting_for_information",
+      "label": "Waiting for Information",
+      "count": 0
+    },
+    {
+      "value": "assigned",
+      "label": "Assigned",
+      "count": 0
+    },
+    {
+      "value": "in_progress",
+      "label": "In Progress",
+      "count": 1
+    },
+    {
+      "value": "solved",
+      "label": "Solved – Awaiting Verification",
+      "count": 0
+    },
+    {
+      "value": "closed",
+      "label": "Closed",
+      "count": 0
+    },
+    {
+      "value": "rejected",
+      "label": "Rejected",
+      "count": 0
+    },
+    {
+      "value": "reopened",
+      "label": "Reopened",
+      "count": 0
+    }
+  ],
+  "by_priority": [
+    {
+      "value": "urgent",
+      "label": "Urgent",
+      "count": 1
+    },
+    {
+      "value": "normal",
+      "label": "Normal",
+      "count": 1
+    }
+  ],
+  "by_case_type": [
+    {
+      "value": "complaint",
+      "label": "Complaint",
+      "count": 1
+    },
+    {
+      "value": "suggestion",
+      "label": "Suggestion",
+      "count": 1
+    }
+  ],
+  "by_category": [
+    {
+      "id": 2,
+      "label": "Classroom",
+      "count": 2
+    }
+  ],
+  "by_location": [
+    {
+      "label": "Hall A",
+      "count": 1
+    },
+    {
+      "label": "Library",
+      "count": 1
+    }
+  ],
+  "suggestions": {
+    "by_status": [
+      {
+        "value": "submitted",
+        "label": "Submitted",
+        "count": 0
+      },
+      {
+        "value": "under_evaluation",
+        "label": "Under Evaluation",
+        "count": 0
+      },
+      {
+        "value": "accepted",
+        "label": "Accepted for Implementation",
+        "count": 1
+      },
+      {
+        "value": "planned",
+        "label": "Planned",
+        "count": 0
+      },
+      {
+        "value": "implemented",
+        "label": "Implemented",
+        "count": 0
+      },
+      {
+        "value": "declined",
+        "label": "Declined",
+        "count": 0
+      }
+    ],
+    "acceptance_rate": {
+      "value": 100.0,
+      "numerator": 1,
+      "denominator": 1
+    },
+    "implementation_rate": {
+      "value": 0.0,
+      "numerator": 0,
+      "denominator": 1
+    }
+  }
+}

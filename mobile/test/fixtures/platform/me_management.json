@@ -1,0 +1,17 @@
+{
+  "id": 8,
+  "username": "fx.mgmt",
+  "display_name": "fx.mgmt",
+  "first_name": "",
+  "last_name": "",
+  "email": "fx.mgmt@example.test",
+  "role": "management",
+  "role_label": "Faculty Management",
+  "is_case_admin": false,
+  "department": "",
+  "contact_number": "",
+  "capabilities": [
+    "view_dashboard"
+  ],
+  "authorities": []
+}

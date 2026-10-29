@@ -1,0 +1,47 @@
+{
+  "count": 2,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 4,
+      "case_number": "FMSC-2026-00002",
+      "title": "Add charging points in the library",
+      "case_type": "suggestion",
+      "category": "Classroom",
+      "priority": "normal",
+      "status": "in_progress",
+      "status_label": "In Progress",
+      "location": "Library",
+      "authority": "Maintenance Division",
+      "created_at": "2026-10-29T21:41+05:30",
+      "first_response_at": "2026-10-29T21:41+05:30",
+      "deadline_at": null,
+      "solved_at": null,
+      "closed_at": null,
+      "age_days": 0,
+      "is_overdue": false,
+      "reopen_count": 0
+    },
+    {
+      "id": 3,
+      "case_number": "FMSC-2026-00001",
+      "title": "Projector not working in Hall A",
+      "case_type": "complaint",
+      "category": "Classroom",
+      "priority": "urgent",
+      "status": "submitted",
+      "status_label": "Submitted",
+      "location": "Hall A",
+      "authority": null,
+      "created_at": "2026-10-29T21:41+05:30",
+      "first_response_at": null,
+      "deadline_at": null,
+      "solved_at": null,
+      "closed_at": null,
+      "age_days": 0,
+      "is_overdue": false,
+      "reopen_count": 0
+    }
+  ]
+}

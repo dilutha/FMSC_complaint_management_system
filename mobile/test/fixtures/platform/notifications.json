@@ -1,0 +1,67 @@
+{
+  "count": 4,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 11,
+      "event_type": "suggestion_update",
+      "event_label": "Suggestion implementation update",
+      "title": "Progress on suggestion FMSC-2026-00002",
+      "body": "40% complete.",
+      "is_read": false,
+      "read_at": null,
+      "created_at": "2026-10-29T21:41:08.519478+05:30",
+      "case_number": "FMSC-2026-00002",
+      "target": {
+        "type": "suggestion",
+        "id": 4
+      }
+    },
+    {
+      "id": 10,
+      "event_type": "suggestion_decision",
+      "event_label": "Suggestion decision",
+      "title": "Suggestion FMSC-2026-00002 accepted for implementation",
+      "body": "Maintenance Division will implement it.",
+      "is_read": false,
+      "read_at": null,
+      "created_at": "2026-10-29T21:41:08.496694+05:30",
+      "case_number": "FMSC-2026-00002",
+      "target": {
+        "type": "suggestion",
+        "id": 4
+      }
+    },
+    {
+      "id": 7,
+      "event_type": "case_submitted",
+      "event_label": "Submission confirmation",
+      "title": "We received your suggestion FMSC-2026-00002",
+      "body": "“Add charging points in the library” has been submitted. You will be notified as it progresses.",
+      "is_read": false,
+      "read_at": null,
+      "created_at": "2026-10-29T21:41:08.434209+05:30",
+      "case_number": "FMSC-2026-00002",
+      "target": {
+        "type": "suggestion",
+        "id": 4
+      }
+    },
+    {
+      "id": 5,
+      "event_type": "case_submitted",
+      "event_label": "Submission confirmation",
+      "title": "We received your case FMSC-2026-00001",
+      "body": "“Projector not working in Hall A” has been submitted. You will be notified as it progresses.",
+      "is_read": false,
+      "read_at": null,
+      "created_at": "2026-10-29T21:41:08.429347+05:30",
+      "case_number": "FMSC-2026-00001",
+      "target": {
+        "type": "case",
+        "id": 3
+      }
+    }
+  ]
+}
