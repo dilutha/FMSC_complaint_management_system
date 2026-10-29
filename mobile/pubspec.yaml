@@ -13,6 +13,7 @@ dependencies:
   path_provider: ^2.1.5
   cross_file: ^0.3.4
   file_picker: ^11.0.3
+  flutter_secure_storage: ^10.3.4
 
 dev_dependencies:
   flutter_test:

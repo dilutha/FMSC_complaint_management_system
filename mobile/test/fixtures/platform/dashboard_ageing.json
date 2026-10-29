@@ -1,0 +1,78 @@
+{
+  "filters": {
+    "date_from": null,
+    "date_to": null,
+    "category": null,
+    "priority": null,
+    "case_type": null,
+    "status": [],
+    "authority": null,
+    "location": ""
+  },
+  "generated_at": "2026-10-29T16:11:08.662566+00:00",
+  "scope": "open",
+  "count": 2,
+  "average_age_days": 0,
+  "buckets": [
+    {
+      "label": "0–2 days",
+      "min_days": 0,
+      "max_days": 2,
+      "count": 2
+    },
+    {
+      "label": "3–7 days",
+      "min_days": 3,
+      "max_days": 7,
+      "count": 0
+    },
+    {
+      "label": "8–14 days",
+      "min_days": 8,
+      "max_days": 14,
+      "count": 0
+    },
+    {
+      "label": "15–30 days",
+      "min_days": 15,
+      "max_days": 30,
+      "count": 0
+    },
+    {
+      "label": "More than 30 days",
+      "min_days": 31,
+      "max_days": null,
+      "count": 0
+    }
+  ],
+  "oldest": [
+    {
+      "id": 3,
+      "case_number": "FMSC-2026-00001",
+      "title": "Projector not working in Hall A",
+      "case_type": "complaint",
+      "status": "submitted",
+      "status_label": "Submitted",
+      "priority": "urgent",
+      "category": "Classroom",
+      "authority": null,
+      "created_at": "2026-10-29T16:11:08.423345+00:00",
+      "age_days": 0,
+      "is_overdue": false
+    },
+    {
+      "id": 4,
+      "case_number": "FMSC-2026-00002",
+      "title": "Add charging points in the library",
+      "case_type": "suggestion",
+      "status": "in_progress",
+      "status_label": "In Progress",
+      "priority": "normal",
+      "category": "Classroom",
+      "authority": "Maintenance Division",
+      "created_at": "2026-10-29T16:11:08.425970+00:00",
+      "age_days": 0,
+      "is_overdue": false
+    }
+  ]
+}

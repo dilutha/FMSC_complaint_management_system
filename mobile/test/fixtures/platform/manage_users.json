@@ -1,0 +1,84 @@
+{
+  "count": 5,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 6,
+      "username": "fx.admin",
+      "email": "fx.admin@example.test",
+      "first_name": "Case",
+      "last_name": "Admin",
+      "role": "case_admin",
+      "role_label": "Administrator",
+      "department": "",
+      "contact_number": "",
+      "is_active": true,
+      "date_joined": "2026-10-29T21:41:08.098983+05:30",
+      "last_login": null,
+      "authority_ids": []
+    },
+    {
+      "id": 8,
+      "username": "fx.mgmt",
+      "email": "fx.mgmt@example.test",
+      "first_name": "",
+      "last_name": "",
+      "role": "management",
+      "role_label": "Faculty Management",
+      "department": "",
+      "contact_number": "",
+      "is_active": true,
+      "date_joined": "2026-10-29T21:41:08.312383+05:30",
+      "last_login": null,
+      "authority_ids": []
+    },
+    {
+      "id": 7,
+      "username": "fx.officer",
+      "email": "fx.officer@example.test",
+      "first_name": "Maint",
+      "last_name": "Officer",
+      "role": "authority",
+      "role_label": "Relevant Authority",
+      "department": "",
+      "contact_number": "",
+      "is_active": true,
+      "date_joined": "2026-10-29T21:41:08.205257+05:30",
+      "last_login": null,
+      "authority_ids": [
+        2
+      ]
+    },
+    {
+      "id": 5,
+      "username": "fx.student",
+      "email": "fx.student@example.test",
+      "first_name": "Nimal",
+      "last_name": "Perera",
+      "role": "student",
+      "role_label": "Student",
+      "department": "",
+      "contact_number": "",
+      "is_active": true,
+      "date_joined": "2026-10-29T21:41:07.992077+05:30",
+      "last_login": null,
+      "authority_ids": []
+    },
+    {
+      "id": 9,
+      "username": "fx.sysadmin",
+      "email": "fx.sys@example.test",
+      "first_name": "",
+      "last_name": "",
+      "role": "system_admin",
+      "role_label": "System Administrator",
+      "department": "",
+      "contact_number": "",
+      "is_active": true,
+      "date_joined": "2026-10-29T21:41:08.668851+05:30",
+      "last_login": null,
+      "authority_ids": []
+    }
+  ]
+}

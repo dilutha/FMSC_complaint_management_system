@@ -1,0 +1,25 @@
+{
+  "token": "synthetic-token-for-tests",
+  "user": {
+    "id": 7,
+    "username": "fx.officer",
+    "display_name": "Maint Officer",
+    "first_name": "Maint",
+    "last_name": "Officer",
+    "email": "fx.officer@example.test",
+    "role": "authority",
+    "role_label": "Relevant Authority",
+    "is_case_admin": false,
+    "department": "",
+    "contact_number": "",
+    "capabilities": [
+      "handle_assigned_cases"
+    ],
+    "authorities": [
+      {
+        "id": 2,
+        "name": "Maintenance Division"
+      }
+    ]
+  }
+}
