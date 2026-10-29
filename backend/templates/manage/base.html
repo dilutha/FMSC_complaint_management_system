@@ -1,0 +1,50 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}FMSC Management{% endblock %}</title>
+  <style>
+    /* Tokens mirror mobile/lib/design (see docs/DESIGN_SYSTEM.md).
+       Brand: official USJ palette. Neutrals and semantic colours are project colours. */
+    :root {
+      --usj-red: #C1282D; --usj-maroon: #800000; --usj-yellow: #F9EB24; --usj-blue: #314E86;
+      --bg: #F6F6F7; --surface: #FFFFFF; --surface-muted: #EFEFF1; --border: #D6D6DB;
+      --text: #1C1C21; --text-2: #55555F;
+      --success: #1E6B34; --success-bg: #E3F2E7; --warning: #7A4E00; --warning-bg: #FFF3D1;
+      --error: #B3261E; --error-bg: #FBE4E2;
+      --radius-sm: 8px; --radius-md: 12px; --space: 8px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    header { background: var(--usj-maroon); color: #fff; padding: 12px 24px; display: flex; align-items: center; gap: 12px; }
+    header .accent { width: 6px; align-self: stretch; background: var(--usj-yellow); border-radius: 3px; }
+    header h1 { font-size: 18px; margin: 0; font-weight: 600; }
+    main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+    h2 { font-size: 16px; margin: 0 0 12px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    .kpi .label { color: var(--text-2); font-size: 13px; }
+    .kpi .value { font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .kpi .hint { color: var(--text-2); font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+    th { font-size: 13px; color: var(--text-2); font-weight: 600; }
+    td.num, th.num { text-align: right; }
+    form.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+    form.filters label { display: flex; flex-direction: column; font-size: 13px; color: var(--text-2); gap: 4px; }
+    input, select { font: inherit; padding: 8px; min-height: 40px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); }
+    input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--usj-blue); outline-offset: 2px; }
+    button { font: inherit; font-weight: 600; min-height: 40px; padding: 8px 16px; border: 0; border-radius: var(--radius-sm); background: var(--usj-red); color: #fff; cursor: pointer; }
+    a { color: var(--usj-maroon); }
+    .note { color: var(--text-2); font-size: 13px; }
+    .error { background: var(--error-bg); color: var(--error); padding: 8px 12px; border-radius: var(--radius-sm); }
+    .badge-overdue { color: var(--error); font-weight: 600; }
+    @media print { header, form.filters, .no-print { display: none; } body { background: #fff; } .card { break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <header><span class="accent" aria-hidden="true"></span><h1>{% block heading %}FMSC Management{% endblock %}</h1></header>
+  <main>{% block content %}{% endblock %}</main>
+</body>
+</html>
