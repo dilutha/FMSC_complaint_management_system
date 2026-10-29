@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -49,9 +50,15 @@ class FakeAuthRepository implements AuthRepository {
   CurrentUser? meResult;
   Object? meError;
   int revokeCalls = 0;
+  int signInCalls = 0;
+
+  /// When set, sign-in waits for it (simulates a request in flight).
+  Completer<void>? holdSignIn;
 
   @override
   Future<({String token, CurrentUser user})> signIn(String username, String password) async {
+    signInCalls++;
+    if (holdSignIn != null) await holdSignIn!.future;
     if (signInError != null) throw signInError!;
     return signInResult!;
   }

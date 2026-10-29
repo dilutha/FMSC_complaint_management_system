@@ -9,6 +9,8 @@ from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
 
+from .database import build_databases
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -61,6 +63,17 @@ if not SECRET_KEY:
         raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set when DEBUG is false.")
 
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,10.0.2.2")
+
+# CORS is enforced by browsers only, so it matters for the Flutter *web* build;
+# the native Android/iOS apps are unaffected. Only listed origins are allowed; nothing is open by default.
+# Authentication uses the Authorization header, so cookies are never shared cross-origin.
+CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "")
+CORS_ALLOWED_ORIGIN_REGEXES = (
+    # `flutter run -d chrome` picks a random localhost port; allow it in DEBUG only.
+    [r"^http://(localhost|127\.0\.0\.1)(:\d+)?$"] if DEBUG and env_bool("CORS_ALLOW_LOCALHOST", True) else []
+)
+CORS_ALLOW_CREDENTIALS = False
+CORS_URLS_REGEX = r"^/api/.*$"
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS", "")
 
 INSTALLED_APPS = [
@@ -70,6 +83,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "corsheaders",
     "rest_framework",
     "rest_framework.authtoken",
     "drf_spectacular",
@@ -86,7 +100,10 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Member B: request duration / SQL count diagnostics (no bodies or secrets)
+    "apps.audit.timing.RequestTimingMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",  # before CommonMiddleware (django-cors-headers docs)
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -116,30 +133,16 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 # --- Database ---------------------------------------------------------------
-# PostgreSQL is the project database. FMSC_DB_ENGINE=sqlite is an explicit,
-# local-only escape hatch for running the unit tests where no PostgreSQL
-# credentials are available; it must never be used for deployment.
-if env("FMSC_DB_ENGINE", "postgresql") == "sqlite":
-    if not (DEBUG or TESTING):
-        raise ImproperlyConfigured("SQLite is only permitted for local tests.")
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "local-test.sqlite3",
-        }
-    }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": env("POSTGRES_DB", "fmsc_cases"),
-            "USER": env("POSTGRES_USER", "fmsc"),
-            "PASSWORD": env("POSTGRES_PASSWORD", ""),
-            "HOST": env("POSTGRES_HOST", "localhost"),
-            "PORT": env("POSTGRES_PORT", "5432"),
-            "CONN_MAX_AGE": env_int("POSTGRES_CONN_MAX_AGE", 60),
-        }
-    }
+# PostgreSQL (Supabase-hosted or local) configured from DATABASE_URL or DB_*
+# variables; see config/database.py and backend/database/README.md for the
+# precedence rules, SSL and Supabase pooler handling. SQLite is an explicit,
+# local-only escape hatch for running tests (FMSC_DB_ENGINE=sqlite).
+DATABASES = build_databases(
+    os.environ,
+    sqlite_path=BASE_DIR / "local-test.sqlite3",
+    allow_sqlite=DEBUG or TESTING,
+    testing=TESTING,
+)
 
 AUTH_USER_MODEL = "accounts.User"
 
@@ -221,6 +224,13 @@ SPECTACULAR_SETTINGS = {
     ),
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    # The schema contains no data, only endpoint shapes. It is public while
+    # developing and requires sign-in in production unless explicitly opened.
+    "SERVE_PERMISSIONS": (
+        ["rest_framework.permissions.AllowAny"]
+        if env_bool("FMSC_PUBLIC_API_DOCS", DEBUG)
+        else ["rest_framework.permissions.IsAuthenticated"]
+    ),
     "SCHEMA_PATH_PREFIX": r"/api/v1",
     "COMPONENT_SPLIT_REQUEST": True,
     # One schema name per shared choice set (case and suggestion statuses are used by several endpoints).
@@ -248,6 +258,12 @@ FMSC_CASES = {
 }
 
 # --- Platform services (Member B) -----------------------------------------------
+# Revoke Supabase Data API access and enable RLS after every migrate
+# (apps/accounts/supabase.py). Only acts on databases with Supabase's roles.
+FMSC_SUPABASE_HARDEN = env_bool("FMSC_SUPABASE_HARDEN", True)
+# API requests slower than this are logged at WARNING by RequestTimingMiddleware.
+FMSC_SLOW_REQUEST_MS = env_int("FMSC_SLOW_REQUEST_MS", 1000)
+
 FMSC_AUTH = {
     # Hours a sign-in token stays valid. 0 disables expiry (not recommended).
     "TOKEN_TTL_HOURS": env_int("FMSC_TOKEN_TTL_HOURS", 12),

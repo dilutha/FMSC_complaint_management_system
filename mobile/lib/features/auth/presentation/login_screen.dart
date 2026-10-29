@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/config.dart';
 import '../../../core/api_client.dart';
 import '../../../design/theme.dart';
 import '../../../design/usj_colors.dart';
@@ -9,7 +10,10 @@ import '../../../platform/platform_scope.dart';
 /// Sign-in with university username or email. Replaces the case module's
 /// placeholder sign-in screen (shared contract: AuthSession).
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.serverLabel});
+
+  /// Server address shown in connection errors; defaults to [AppConfig.serverLabel].
+  final String? serverLabel;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -40,7 +44,25 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  /// The server address shown in connection errors (overridable in tests).
+  String get _server => widget.serverLabel ?? AppConfig.serverLabel;
+
+  /// Maps a failed sign-in to a message that tells the user what to do.
+  String _messageFor(ApiException e) => switch (e) {
+    ApiException(statusCode: 400) => 'Incorrect username or password. Check both and try again.',
+    ApiException(statusCode: 429) => 'Too many sign-in attempts. Please wait a while and try again.',
+    ApiException(code: 'timeout') =>
+      'The server at $_server did not respond in time. Check that the backend is running and that '
+          'this is the right address, then try again.',
+    ApiException(isNetwork: true) =>
+      'Cannot reach the server at $_server. Check that the backend is running and your internet '
+          'connection, then try again.',
+    ApiException(statusCode: >= 500) => 'The server had a problem signing you in. Please try again shortly.',
+    _ => e.message,
+  };
+
   Future<void> _signIn() async {
+    if (_busy) return; // one request at a time (double taps, Enter key)
     if (!_formKey.currentState!.validate()) return;
     final scope = PlatformScope.of(context);
     setState(() {
@@ -52,14 +74,11 @@ class _LoginScreenState extends State<LoginScreen> {
       _password.clear();
       await scope.session.signIn(token: result.token, user: result.user);
     } on ApiException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = switch (e.statusCode) {
-          400 => 'Incorrect username or password. Check both and try again.',
-          429 => 'Too many sign-in attempts. Please wait a while and try again.',
-          _ => e.message,
-        };
-      });
+      if (mounted) setState(() => _error = _messageFor(e));
+    } catch (e, stack) {
+      // Anything unexpected (e.g. a malformed response) must not leave the button stuck.
+      debugPrint('Sign-in failed unexpectedly: $e\n$stack');
+      if (mounted) setState(() => _error = 'Something went wrong while signing in. Please try again.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }

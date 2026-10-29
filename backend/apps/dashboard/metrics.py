@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from statistics import mean, median
 
-from django.db.models import Count, Min, OuterRef, Q, Subquery
+from django.db.models import Count, Exists, Min, OuterRef, Q, Subquery
 from django.db.models.functions import Lower, Trim, Trunc
 from django.utils import timezone
 
@@ -23,6 +23,7 @@ from apps.cases.models import (
     TERMINAL_STATUSES,
     Authority,
     Case,
+    CaseLink,
     CaseResolution,
     CaseStatus,
     CaseStatusHistory,
@@ -138,16 +139,25 @@ def summary(f: DashboardFilters, now=None) -> dict:
         ever_solved=Count("id", filter=Q(solved_at__isnull=False)),
         reopened=Count("id", filter=Q(reopen_count__gt=0)),
         resolved=Count("id", filter=Q(status__in=RESOLVED_STATUSES)),
+        repeat=Count("id", filter=Q(Exists(
+            CaseLink.objects.filter(to_case=OuterRef("pk"), link_type__in=REPEAT_LINK_TYPES)
+        ))),
+        # Per-choice counts in the same query (each query costs a network round trip).
+        **{f"status__{v}": Count("id", filter=Q(status=v)) for v in CaseStatus.values},
+        **{f"case_type__{v}": Count("id", filter=Q(case_type=v)) for v in CaseType.values},
     )
     totals["attempted"] = totals["total"] - totals["not_attempted"]
-    repeat = qs.filter(links_to__link_type__in=REPEAT_LINK_TYPES).values("pk").distinct().count()
+    repeat = totals["repeat"]
 
-    first_response = qs.annotate(first_action_at=first_response_subquery()).filter(first_action_at__isnull=False)
-    response_durations = [row["first_action_at"] - row["created_at"]
-                          for row in first_response.values("created_at", "first_action_at")]
-    resolution_durations = [row["solved_at"] - row["created_at"] for row in
-                            qs.filter(status__in=RESOLVED_STATUSES, solved_at__isnull=False)
-                            .values("created_at", "solved_at")]
+    # One query for both durations (first response and resolution).
+    response_durations, resolution_durations = [], []
+    for row in qs.annotate(first_action_at=first_response_subquery()).values(
+        "created_at", "first_action_at", "solved_at", "status"
+    ):
+        if row["first_action_at"] is not None:
+            response_durations.append(row["first_action_at"] - row["created_at"])
+        if row["status"] in RESOLVED_STATUSES and row["solved_at"] is not None:
+            resolution_durations.append(row["solved_at"] - row["created_at"])
 
     return {
         "filters": f.as_dict(),
@@ -166,9 +176,10 @@ def summary(f: DashboardFilters, now=None) -> dict:
             "first_response_hours": _duration_stats(response_durations, 3600),
             "resolution_days": _duration_stats(resolution_durations, 86400),
         },
-        "by_status": _by_choice(qs, "status", CaseStatus),
-        "by_priority": _by_choice(qs, "priority", Priority),
-        "by_case_type": _by_choice(qs, "case_type", CaseType),
+        "by_status": _from_totals(totals, "status", CaseStatus),
+        "by_priority": [{"value": Priority.URGENT, "label": Priority.URGENT.label, "count": totals["urgent"]},
+                        {"value": Priority.NORMAL, "label": Priority.NORMAL.label, "count": totals["normal"]}],
+        "by_case_type": _from_totals(totals, "case_type", CaseType),
         "by_category": [
             {"id": row["category_id"], "label": row["category__name"], "count": row["count"]}
             for row in qs.values("category_id", "category__name").annotate(count=Count("id")).order_by("-count", "category__name")
@@ -182,9 +193,8 @@ def summary(f: DashboardFilters, now=None) -> dict:
     }
 
 
-def _by_choice(qs, field_name, choices):
-    counts = dict(qs.values_list(field_name).annotate(count=Count("id")).order_by())
-    return [{"value": value, "label": label, "count": counts.get(value, 0)} for value, label in choices.choices]
+def _from_totals(totals, field_name, choices):
+    return [{"value": v, "label": label, "count": totals[f"{field_name}__{v}"]} for v, label in choices.choices]
 
 
 def suggestion_summary(case_qs) -> dict:

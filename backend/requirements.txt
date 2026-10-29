@@ -1,8 +1,12 @@
+# Runtime dependencies (production and development).
+# Versions are ranges compatible with Django 5.2 LTS; requirements.lock records
+# the exact versions last installed and tested.
 Django>=5.2,<5.3
 djangorestframework>=3.15,<3.17
 drf-spectacular>=0.28,<0.30
-psycopg[binary]>=3.2,<3.4
-
-# Testing
-pytest>=8,<9
-pytest-django>=4.9,<5
+# PostgreSQL driver: psycopg 3 (Django's recommended driver since 4.2).
+# The binary wheel bundles libpq, so no system PostgreSQL client is needed;
+# "pool" adds psycopg_pool for Django's connection pooling (config/database.py).
+psycopg[binary,pool]>=3.2,<3.4
+# CORS for the Flutter web build (origins configured by CORS_ALLOWED_ORIGINS).
+django-cors-headers>=4.6,<5

@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:fmsc_cases/core/api_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fmsc_cases/features/admin/presentation/users_screen.dart';
 import 'package:fmsc_cases/features/auth/data/platform_auth_session.dart';
@@ -100,6 +103,62 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(AppShell), findsOneWidget);
       expect(h.store.value, 'tok');
+    });
+  });
+
+  group('Login error handling', () {
+    Future<void> attempt(WidgetTester tester, PlatformHarness h) async {
+      await tester.pumpWidget(h.wrap(const LoginScreen(serverLabel: '127.0.0.1:8000')));
+      await tester.enterText(find.byType(TextFormField).at(0), 'demo_student');
+      await tester.enterText(find.byType(TextFormField).at(1), 'Password@123');
+      await tester.tap(find.text('Sign in'));
+      await tester.pumpAndSettle();
+    }
+
+    final cases = <String, (Object, String)>{
+      'timeout names the server': (
+        ApiException(statusCode: 0, code: 'timeout', message: 'slow'),
+        'The server at 127.0.0.1:8000 did not respond in time',
+      ),
+      'network failure names the server': (
+        ApiException(statusCode: 0, code: 'network', message: 'down'),
+        'Cannot reach the server at 127.0.0.1:8000',
+      ),
+      'server error': (apiError(500, 'boom'), 'The server had a problem signing you in'),
+      'throttled': (apiError(429, 'slow down'), 'Too many sign-in attempts'),
+      'invalid credentials': (apiError(400, 'bad'), 'Incorrect username or password'),
+      'unexpected error does not leave the button stuck': (
+        const FormatException('bad json'),
+        'Something went wrong while signing in',
+      ),
+    };
+    for (final entry in cases.entries) {
+      testWidgets(entry.key, (tester) async {
+        final h = PlatformHarness()..auth.signInError = entry.value.$1;
+        await attempt(tester, h);
+        expect(find.textContaining(entry.value.$2), findsOneWidget);
+        expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNotNull); // restored
+        expect(h.session.isSignedIn, isFalse);
+      });
+    }
+
+    testWidgets('shows progress and ignores repeated taps while signing in', (tester) async {
+      final h = PlatformHarness()
+        ..auth.signInResult = (token: 'tok', user: studentUser)
+        ..auth.holdSignIn = Completer<void>();
+      await tester.pumpWidget(h.wrap(const LoginScreen()));
+      await tester.enterText(find.byType(TextFormField).at(0), 'demo_student');
+      await tester.enterText(find.byType(TextFormField).at(1), 'Password@123');
+      await tester.tap(find.text('Sign in'));
+      await tester.pump();
+      expect(find.text('Signing in…'), findsOneWidget);
+      await tester.tap(find.byType(FilledButton), warnIfMissed: false);
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump();
+      expect(h.auth.signInCalls, 1);
+      h.auth.holdSignIn!.complete();
+      await tester.pumpAndSettle();
+      expect(h.session.isSignedIn, isTrue);
     });
   });
 

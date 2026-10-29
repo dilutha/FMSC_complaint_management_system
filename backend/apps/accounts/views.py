@@ -38,9 +38,11 @@ def _me(user):
 def issue_token(user) -> Token:
     """Reuse a still-valid token (other devices stay signed in), else rotate."""
     token = Token.objects.filter(user=user).first()
-    if token and not token_expired(token):
+    if token is None:
+        return Token.objects.create(user=user)
+    if not token_expired(token):
         return token
-    Token.objects.filter(user=user).delete()
+    token.delete()
     return Token.objects.create(user=user)
 
 

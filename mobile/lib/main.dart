@@ -20,7 +20,11 @@ import 'platform/platform_scope.dart';
 
 void main() {
   final session = PlatformAuthSession(SecureTokenStore());
-  final api = ApiClient(baseUrl: AppConfig.apiBaseUrl, session: session);
+  if (AppConfig.looksMisconfigured) {
+    debugPrint('WARNING: API_BASE_URL uses 10.0.2.2, which only works inside the Android emulator. '
+        'Use http://127.0.0.1:8000/api/v1/ for web and desktop.');
+  }
+  final api = ApiClient(baseUrl: AppConfig.apiBaseUrl, session: session, timeout: AppConfig.requestTimeout);
   runApp(FmscApp.fromApi(session: session, api: api));
 }
 
