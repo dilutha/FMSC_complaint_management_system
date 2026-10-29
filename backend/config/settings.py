@@ -73,10 +73,15 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "drf_spectacular",
-    # Shared / Member B owned (placeholder until Member B's module lands)
+    # Member B: authentication, roles and platform services
     "apps.accounts",
     # Member A: core case management
     "apps.cases",
+    # Member B: audit log, notifications, suggestion evaluation, dashboard
+    "apps.audit",
+    "apps.notifications",
+    "apps.suggestions",
+    "apps.dashboard",
 ]
 
 MIDDLEWARE = [
@@ -87,6 +92,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Member B: request context for audit attribution and sensitive-access logging
+    "apps.audit.context.AuditContextMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -184,10 +191,10 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 
 # --- Django REST Framework --------------------------------------------------
 REST_FRAMEWORK = {
-    # Shared contract with Member B: token auth for Flutter, session auth (with
-    # CSRF) for browser/admin use. Member B may swap in JWT here centrally.
+    # Shared contract: `Authorization: Token <key>` for Flutter (tokens expire
+    # after FMSC_TOKEN_TTL_HOURS), session auth with CSRF for browser/admin use.
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication",
+        "apps.accounts.authentication.ExpiringTokenAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
@@ -199,6 +206,9 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "case_submit": env("FMSC_THROTTLE_CASE_SUBMIT", "10/hour"),
         "attachment_upload": env("FMSC_THROTTLE_ATTACHMENT_UPLOAD", "40/hour"),
+        "login": env("FMSC_THROTTLE_LOGIN", "20/hour"),
+        "password_change": env("FMSC_THROTTLE_PASSWORD_CHANGE", "10/hour"),
+        "report_export": env("FMSC_THROTTLE_REPORT_EXPORT", "30/hour"),
     },
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
 }
@@ -213,6 +223,12 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     "SCHEMA_PATH_PREFIX": r"/api/v1",
     "COMPONENT_SPLIT_REQUEST": True,
+    # One schema name per shared choice set (case and suggestion statuses are used by several endpoints).
+    "ENUM_NAME_OVERRIDES": {
+        "CaseStatusEnum": "apps.cases.models.CaseStatus",
+        "PriorityEnum": "apps.cases.models.Priority",
+        "SuggestionStatusEnum": "apps.suggestions.models.SuggestionStatus",
+    },
 }
 
 # --- Case-management policy (configurable without code changes) ------------
@@ -230,6 +246,27 @@ FMSC_CASES = {
     "DUPLICATE_THRESHOLD": env_float("FMSC_DUPLICATE_THRESHOLD", 0.45),
     "CASE_NUMBER_PREFIX": env("FMSC_CASE_NUMBER_PREFIX", "FMSC"),
 }
+
+# --- Platform services (Member B) -----------------------------------------------
+FMSC_AUTH = {
+    # Hours a sign-in token stays valid. 0 disables expiry (not recommended).
+    "TOKEN_TTL_HOURS": env_int("FMSC_TOKEN_TTL_HOURS", 12),
+}
+
+FMSC_NOTIFICATIONS = {
+    # In-app notifications are always on. Email copies are opt-in (approved scope:
+    # email + in-app). No SMS or WhatsApp.
+    "EMAIL_ENABLED": env_bool("FMSC_EMAIL_NOTIFICATIONS", False),
+    "REMINDER_HOURS_BEFORE_DEADLINE": env_int("FMSC_REMINDER_HOURS_BEFORE_DEADLINE", 24),
+}
+
+EMAIL_BACKEND = env("DJANGO_EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
+EMAIL_HOST = env("DJANGO_EMAIL_HOST", "localhost")
+EMAIL_PORT = env_int("DJANGO_EMAIL_PORT", 587)
+EMAIL_HOST_USER = env("DJANGO_EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = env("DJANGO_EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("DJANGO_EMAIL_USE_TLS", True)
+DEFAULT_FROM_EMAIL = env("DJANGO_DEFAULT_FROM_EMAIL", "FMSC Cases <no-reply@localhost>")
 
 LOGGING = {
     "version": 1,
