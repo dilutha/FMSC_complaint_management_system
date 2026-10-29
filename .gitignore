@@ -1,0 +1,54 @@
+# Python / Django
+__pycache__/
+*.py[cod]
+*.sqlite3
+db.sqlite3
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Django generated files
+staticfiles/
+media/
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+build/
+coverage/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+
+# Operating system
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# Node.js, if used
+node_modules/
+.next/
+dist/
+
+# Credentials and private keys
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
