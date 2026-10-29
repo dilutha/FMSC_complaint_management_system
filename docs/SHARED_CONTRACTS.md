@@ -1,68 +1,88 @@
-# Shared contracts with Member B — **proposals awaiting agreement**
+# Shared contracts between Member A (cases) and Member B (platform)
 
-This machine had no existing FMSC repository and none of Member B's code. Member A therefore built the case module against the smallest interfaces it needs. Each one is marked below as **placeholder** (Member B replaces it) or **contract** (both sides depend on it and must agree before changing it).
+Member A wrote the original version of this file before Member B's code existed, and marked each interface as a **placeholder** or a **contract**. This version records:
+- what Member B implemented against each one;
+- the decisions Member B took where Member A asked a question (**Member A to confirm**);
+- what Member B asks of Member A.
 
-## 1. User model and roles — contract
+## 1. User model and roles: contract (unchanged)
 
-`apps/accounts/models.py` sets `AUTH_USER_MODEL = accounts.User`. This had to exist before the first migration, because Django cannot swap the user model later without resetting the database.
+`accounts.User` and the role values `student`, `lecturer`, `case_admin`, `authority`, `management` and `system_admin` are unchanged. **No migration changes the shared user table.**
 
-- **Role values the case module relies on:** `student`, `lecturer`, `case_admin`, `authority`, `management`, `system_admin`
-- **Properties it uses:** `display_name`, `is_case_admin`, `is_management_viewer`, `is_authority_officer`, `can_submit_cases`
-- **Authority membership:** stored as `cases.Authority.members` (M2M to User), not on the user model.
+The properties the case module relies on keep their meaning: `display_name`, `is_case_admin`, `is_management_viewer`, `is_authority_officer` and `can_submit_cases`.
 
-Member B may take ownership of the `accounts` app and add fields, as long as the values and properties above keep their meaning.
+Member B added **capability properties** to the same model. They are the single definition of platform permissions:
 
-## 2. Authentication — placeholder
-
-- **Backend:** DRF `TokenAuthentication` plus `SessionAuthentication` (CSRF enforced), configured centrally in `REST_FRAMEWORK`. The placeholder endpoints `/api/v1/auth/token|me|logout/` can be replaced, for example with JWT or university SSO.
-- **Flutter:** implement `lib/integration/auth_session.dart` → `AuthSession`. Set `scheme` to `'Bearer'` for JWT. The API client calls `onUnauthorised()` on any 401. Delete `placeholder_sign_in_screen.dart` when the real login lands.
-
-## 3. Notifications, audit, dashboards — contract (Django signals)
-
-Defined in `apps/cases/signals.py`. They are sent **after commit**, with `sender=Case, case, actor, payload`. A receiver that fails is logged and doesn't roll back the case change.
-
-| Signal | Expected consumer |
+| Property | True for |
 |---|---|
-| `case_submitted` | Admin "new case" notification; audit log |
-| `case_assigned` | Authority assignment notification; audit log |
-| `case_status_changed` | Status-update notification; audit log; dashboard cache |
-| `case_solved` | **Solved message to the submitter** (proposal requirement) |
-| `case_resolution_verified` | Audit log; satisfaction reporting |
-| `case_reopened` | Notify the assigned authority and admins |
-| `case_escalated` | Escalation notice to admins and management |
-| `case_deadline_changed` | Audit log |
-| `case_update_added` | Notify the other party; audit log |
+| `can_view_dashboard` | case admin, system admin, management |
+| `can_evaluate_suggestions` | case admin, system admin |
+| `can_manage_authorities` | case admin, system admin |
+| `can_manage_users` | system admin |
+| `can_view_audit_log` | system admin |
 
-The case module keeps its own **domain history**: status history, assignment history, resolutions, deadline changes and escalations. These are part of the case record and feed the timeline. The generic audit log (who changed what, across every module) stays with Member B.
+Authority membership is still `cases.Authority.members`. Because membership is what grants access to case data, the user-management API only allows authority officers and administrators to be members. Changing a user's role to anything else removes their memberships.
 
-## 4. API conventions — contract
+## 2. Authentication: implemented
 
-These are described in `docs/API.md`: the `/api/v1/` prefix, the error envelope, page-number pagination, and HTTP 404 for objects you can't see.
+- **Decision (Member A to confirm):** keep DRF tokens rather than switching to JWT. The `Authorization: Token <key>` header and the `{token, user}` login response are unchanged, so Member A's API client works as before.
+- Tokens now **expire** (`FMSC_TOKEN_TTL_HOURS`, default 12). The backend uses `apps.accounts.authentication.ExpiringTokenAuthentication`. An expired token returns 401, and Member A's `ApiClient` already calls `session.onUnauthorised()` when that happens.
+- Users can sign in with their username or email.
+- **Flutter:** `PlatformAuthSession` implements the shared `AuthSession` interface. Tokens are kept in secure storage (Keychain or Keystore). `placeholder_sign_in_screen.dart` has been deleted, as Member A requested. `InMemoryAuthSession` is kept because Member A's tests use it.
 
-## 5. Status values — contract
+## 3. Notifications, audit and dashboards: implemented
 
-These are listed in `docs/CASE_LIFECYCLE.md`. Dashboard measures map to them like this:
+All three consume Member A's signals, so **no case-module code was changed**.
 
-| Dashboard measure (proposal) | Query |
-|---|---|
-| Not attempted | `status = submitted` |
-| Attempted | every other status |
-| Open | not `closed` and not `rejected` |
-| Not started | `status = assigned` |
-| Age in days | `age_days`, or `now - created_at` |
-| Urgent | `priority = urgent` (confirmed by an admin; the original request is in `requested_priority`) |
+| Signal | Notification | Audit action |
+|---|---|---|
+| `case_submitted` | Confirmation to the submitter; "new case" to administrators | `case.submitted` |
+| `case_assigned` | Members of the assigned unit | `case.assigned` / `case.reassigned` |
+| `case_status_changed` | Submitter (review, information request with reason, assigned, in progress, closed, rejected with reason) | `case.status_changed` |
+| `case_solved` | Submitter: "solved, please confirm" (the proposal requirement) | covered by the status change |
+| `case_resolution_verified` | The unit, when the fix is confirmed | `case.resolution_verified` |
+| `case_reopened` | The unit and administrators; the submitter too if staff reopened it | covered by the status change |
+| `case_escalated` | The unit and administrators; management from level 2 | `case.escalated` |
+| `case_deadline_changed` | – | `case.deadline_changed` |
+| `case_update_added` | The other party. Internal notes notify nobody. | `case.update_added` (no comment text) |
 
-## 6. Flutter navigation — contract
+Delivery rules:
+- **Duplicates.** Each event has a deterministic key (`apps/audit/event_refs.py`), and unique constraints make a repeated delivery a no-op.
+- **Actor.** The person who acted is never notified of their own action.
+- **Suggestions.** Suggestion cases use suggestion wording and open the suggestion screen.
 
-`lib/features/cases/case_routes.dart` provides `CaseRoutes.myCases()`, `CaseRoutes.openSubmit(context)` and `CaseRoutes.openCase(context, id)`. A notification tap for a case calls `openCase`.
+**Audit schema:** actor (plus a snapshot of their label and role), action, entity type, id and label, previous value, new value, reason, metadata, source and timestamp. Rows cannot be changed or deleted. This is enforced by the model, the queryset and a PostgreSQL trigger. The case module's own domain history (status history, assignments and so on) stays where it is; the audit log records who changed what across all modules.
 
-Wrap the app in `CaseScope(repository: ApiCaseRepository(apiClient), pickAttachments: pickAttachmentsFromDevice, …)`.
+## 4. API conventions: unchanged
 
-## 7. Open questions for Member B and the faculty
+Member B's endpoints follow Member A's conventions in `docs/API.md` exactly. They reuse the same error handler, the same pagination class and the same 404-for-invisible rule.
 
-1. Confirm the status values and the two departures noted in CASE_LIFECYCLE.md.
-2. Approve the verification window (7 days) and the reopen window (14 days).
-3. Approve the deadline-policy values. None are seeded; administrators enter them in Django admin.
-4. Choose the auth scheme: DRF token or JWT.
-5. Decide who owns `Authority` and `Category` CRUD UIs beyond Django admin.
-6. The official maroon has inconsistent published HEX and RGB values; see DESIGN_SYSTEM.md.
+## 5. Status values and suggestions
+
+**Decision (Member A to confirm):** suggestions have no status values of their own in the case model. Their evaluation state (Submitted, Under Evaluation, Accepted, Planned, Implemented, Declined) lives in `SuggestionEvaluation`. Each decision moves the case through Member A's services. The mapping is in [SUGGESTIONS.md](SUGGESTIONS.md).
+
+Dashboard measures use the mapping Member A proposed (Not attempted = `submitted`, Not started = `assigned`, Open = not closed or rejected). Full definitions are in [DASHBOARD_METRICS.md](DASHBOARD_METRICS.md).
+
+**Decision (Member A to confirm):** resolution time ends at `solved_at`.
+
+## 6. Flutter navigation: implemented
+
+- `main.dart` now mounts `PlatformScope` and `CaseScope` around a role-based `AppShell`. The **Cases** tab is `CaseRoutes.myCases()`.
+- Every case link (notifications, ageing report, case report, "Open full case" on a suggestion) calls **`CaseRoutes.openCase`**. There is no second case-detail screen.
+- `PlatformRoutes.openSuggestion(context, id)` and `PlatformRoutes.openTarget(context, type, id)` are the platform's entry points.
+
+## 7. Answers to Member A's open questions
+
+1. **Status values.** Accepted as proposed, including both departures: no "Verification" status and no stored "Not Started" status.
+2. **Verification and reopen windows.** Not changed. They still need the faculty's approval.
+3. **Deadline policies.** Not changed. Reminders use whatever policies administrators configure.
+4. **Auth scheme.** DRF tokens with expiry (section 2).
+5. **Authority and category CRUD.** Member B provides authority management (API and Flutter: create, edit, activate, deactivate; no delete). Category management stays in Django admin.
+6. **Maroon value.** Not resolved; it still needs the branding office. The platform screens do not depend on it beyond the shared app-bar token.
+
+## 8. Requests to Member A
+
+1. **A `case_reclassified` signal.** Priority and category changes currently have no signal, so the audit log records them through a `pre_save`/`post_save` hook on `Case`, attributed through request context. A signal from `review_classification` with `{changes, note}` would be cleaner. Member B will switch to it once it exists.
+2. **An assigned-cases list for authority officers in Flutter.** The case screens list only `mine=true`. Authority officers can open assigned cases from notifications and reports, but they have no list of them. This is case tracking, so it belongs to Member A.
+3. **The OpenAPI warning on `AuthorityViewSet`.** `could not derive type of path parameter "id"`. A `queryset` attribute or `swagger_fake_view` guard would fix it.
+4. **`mobile/analysis_options.yaml`.** `flutter pub get` (Flutter 3.47) added an `analyzer.exclude` block to this file. It was left uncommitted for Member A to accept or discard.
