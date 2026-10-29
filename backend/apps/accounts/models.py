@@ -1,9 +1,11 @@
-"""SHARED CONTRACT — owned by Member B (authentication infrastructure).
+"""SHARED CONTRACT — owned by Member B (authentication and role permissions).
 
-This is the minimal user model the case module depends on. It exists so that
-AUTH_USER_MODEL is fixed before the first migration (Django cannot swap it
-later without a database reset). Member B may extend this model freely as long
-as the `role` field values and the helper properties below keep their meaning.
+AUTH_USER_MODEL is fixed to this model. The `role` values and the helper
+properties used by the case module (`display_name`, `is_case_admin`,
+`is_management_viewer`, `is_authority_officer`, `can_submit_cases`) must keep
+their meaning; see docs/SHARED_CONTRACTS.md. The `can_*` capability properties
+below are the single place where platform permissions are defined; DRF
+permission classes in apps.accounts.permissions delegate to them.
 """
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -27,6 +29,8 @@ class User(AbstractUser):
     def display_name(self) -> str:
         return self.get_full_name() or self.username
 
+    # --- Case-module contract (Member A depends on these) -------------------
+
     @property
     def is_case_admin(self) -> bool:
         return self.is_superuser or self.role in {Role.CASE_ADMIN, Role.SYSTEM_ADMIN}
@@ -42,3 +46,44 @@ class User(AbstractUser):
     @property
     def can_submit_cases(self) -> bool:
         return self.is_active
+
+    # --- Platform capabilities (Member B) ------------------------------------
+
+    @property
+    def is_system_admin(self) -> bool:
+        return self.is_superuser or self.role == Role.SYSTEM_ADMIN
+
+    @property
+    def can_view_dashboard(self) -> bool:
+        """Management dashboard, reports and authority workload."""
+        return self.is_active and (self.is_case_admin or self.is_management_viewer)
+
+    @property
+    def can_evaluate_suggestions(self) -> bool:
+        """Record suggestion decisions (accept, decline, reconsider)."""
+        return self.is_active and self.is_case_admin
+
+    @property
+    def can_view_audit_log(self) -> bool:
+        return self.is_active and self.is_system_admin
+
+    @property
+    def can_manage_users(self) -> bool:
+        return self.is_active and self.is_system_admin
+
+    @property
+    def can_manage_authorities(self) -> bool:
+        return self.is_active and self.is_case_admin
+
+    def capabilities(self) -> list:
+        """Capability names sent to the client for navigation hints only.
+        Every endpoint re-checks permissions on the server."""
+        names = {
+            "view_dashboard": self.can_view_dashboard,
+            "evaluate_suggestions": self.can_evaluate_suggestions,
+            "view_audit_log": self.can_view_audit_log,
+            "manage_users": self.can_manage_users,
+            "manage_authorities": self.can_manage_authorities,
+            "handle_assigned_cases": self.is_active and (self.is_authority_officer or self.is_case_admin),
+        }
+        return sorted(name for name, allowed in names.items() if allowed)
