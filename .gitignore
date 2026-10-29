@@ -1,36 +1,81 @@
-# Python
+# ==========================================
+# Python / Django
+# ==========================================
 __pycache__/
 *.py[cod]
 .venv/
+venv/
+env/
 .pytest_cache/
+.mypy_cache/
 .coverage
 htmlcov/
+*.sqlite3
+db.sqlite3
 
-# Django
+# Django generated files and private uploads
 backend/private_media/
 backend/staticfiles/
-*.sqlite3
+staticfiles/
+media/
 
-# Environment / secrets
+# ==========================================
+# Environment variables and secrets
+# ==========================================
 .env
+.env.*
 *.env
 !.env.example
 
+# ==========================================
 # Flutter / Dart
+# ==========================================
 mobile/.dart_tool/
 mobile/build/
 mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies
 mobile/.packages
+mobile/.pub-cache/
 mobile/pubspec.lock.bak
 mobile/**/GeneratedPluginRegistrant.*
 mobile/android/.gradle/
 mobile/android/local.properties
 mobile/ios/Pods/
 
-# IDE / OS
+# ==========================================
+# IDEs and editors
+# ==========================================
 .idea/
 .vscode/
 *.iml
+*.swp
+
+# ==========================================
+# Operating system
+# ==========================================
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# ==========================================
+# Node.js (if applicable)
+# ==========================================
+node_modules/
+.next/
+dist/
+
+# ==========================================
+# Logs and coverage
+# ==========================================
+*.log
+coverage/
+
+# ==========================================
+# Credentials and private keys
+# ==========================================
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
