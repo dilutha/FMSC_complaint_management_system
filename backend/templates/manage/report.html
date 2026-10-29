@@ -1,0 +1,85 @@
+{% extends "manage/base.html" %}
+{% block title %}Management report · FMSC{% endblock %}
+{% block heading %}Complaint &amp; suggestion management report{% endblock %}
+{% block content %}
+<form class="filters card no-print" method="get" aria-label="Report filters">
+  <label>From <input type="date" name="date_from" value="{{ params.date_from|default:'' }}"></label>
+  <label>To <input type="date" name="date_to" value="{{ params.date_to|default:'' }}"></label>
+  <label>Category
+    <select name="category"><option value="">All</option>
+      {% for c in categories %}<option value="{{ c.pk }}" {% if params.category == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+    </select></label>
+  <label>Responsible unit
+    <select name="authority"><option value="">All</option>
+      {% for a in authorities %}<option value="{{ a.pk }}" {% if params.authority == a.pk|stringformat:"s" %}selected{% endif %}>{{ a.name }}</option>{% endfor %}
+    </select></label>
+  <label>Priority
+    <select name="priority"><option value="">All</option>
+      <option value="urgent" {% if params.priority == "urgent" %}selected{% endif %}>Urgent</option>
+      <option value="normal" {% if params.priority == "normal" %}selected{% endif %}>Normal</option>
+    </select></label>
+  <button type="submit">Apply</button>
+  <a href="?" class="note">Clear</a>
+</form>
+{% if errors %}<p class="error" role="alert">Some filters were invalid and have been ignored: {{ errors }}</p>{% endif %}
+
+{% with t=summary.totals r=summary.rates tm=summary.timings %}
+<section class="card" aria-labelledby="h-overview">
+  <h2 id="h-overview">Overview</h2>
+  <p class="note">Cases submitted {% if summary.filters.date_from %}from {{ summary.filters.date_from }}{% else %}since records began{% endif %}{% if summary.filters.date_to %} to {{ summary.filters.date_to }}{% endif %}. Generated {{ summary.generated_at|slice:":16" }}.</p>
+  <div class="grid">
+    <div class="kpi"><div class="label">Total cases</div><div class="value">{{ t.total }}</div><div class="hint">{{ t.complaints }} complaints · {{ t.suggestions }} suggestions</div></div>
+    <div class="kpi"><div class="label">Open</div><div class="value">{{ t.open }}</div><div class="hint">Not closed or rejected</div></div>
+    <div class="kpi"><div class="label">Not attempted</div><div class="value">{{ t.not_attempted }}</div><div class="hint">Still “Submitted”</div></div>
+    <div class="kpi"><div class="label">Not started</div><div class="value">{{ t.not_started }}</div><div class="hint">Assigned, work not started</div></div>
+    <div class="kpi"><div class="label">Overdue</div><div class="value">{{ t.overdue }}</div><div class="hint">{% if r.overdue.value is not None %}{{ r.overdue.value }}% of active cases{% else %}No active cases{% endif %}</div></div>
+    <div class="kpi"><div class="label">Urgent / normal</div><div class="value">{{ t.urgent }} / {{ t.normal }}</div></div>
+    <div class="kpi"><div class="label">Median first response</div><div class="value">{% if tm.first_response_hours.median is not None %}{{ tm.first_response_hours.median }} h{% else %}–{% endif %}</div><div class="hint">{{ tm.first_response_hours.sample_size }} cases</div></div>
+    <div class="kpi"><div class="label">Median resolution</div><div class="value">{% if tm.resolution_days.median is not None %}{{ tm.resolution_days.median }} d{% else %}–{% endif %}</div><div class="hint">Average {{ tm.resolution_days.average|default:"–" }} d · {{ tm.resolution_days.sample_size }} cases</div></div>
+    <div class="kpi"><div class="label">Reopening rate</div><div class="value">{% if r.reopening.value is not None %}{{ r.reopening.value }}%{% else %}–{% endif %}</div><div class="hint">{{ r.reopening.numerator }} of {{ r.reopening.denominator }} solved</div></div>
+    <div class="kpi"><div class="label">Repeat issues</div><div class="value">{% if r.repeat_issue.value is not None %}{{ r.repeat_issue.value }}%{% else %}–{% endif %}</div><div class="hint">Linked to an earlier case</div></div>
+  </div>
+</section>
+{% endwith %}
+
+<section class="card" aria-labelledby="h-status">
+  <h2 id="h-status">Cases by status</h2>
+  <table><thead><tr><th scope="col">Status</th><th scope="col" class="num">Cases</th></tr></thead><tbody>
+    {% for row in summary.by_status %}<tr><td>{{ row.label }}</td><td class="num">{{ row.count }}</td></tr>{% endfor %}
+  </tbody></table>
+</section>
+
+<section class="card" aria-labelledby="h-category">
+  <h2 id="h-category">Cases by category</h2>
+  {% if summary.by_category %}
+  <table><thead><tr><th scope="col">Category</th><th scope="col" class="num">Cases</th></tr></thead><tbody>
+    {% for row in summary.by_category %}<tr><td>{{ row.label }}</td><td class="num">{{ row.count }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% else %}<p class="note">No cases match these filters.</p>{% endif %}
+</section>
+
+<section class="card" aria-labelledby="h-workload">
+  <h2 id="h-workload">Responsible unit workload</h2>
+  <p class="note">{{ workload.note }}</p>
+  <table><thead><tr><th scope="col">Unit</th><th scope="col" class="num">Active</th><th scope="col" class="num">Not started</th><th scope="col" class="num">In progress</th><th scope="col" class="num">Overdue</th><th scope="col" class="num">Avg. open age (d)</th><th scope="col" class="num">Median resolution (d)</th></tr></thead><tbody>
+    {% for row in workload.results %}<tr><td>{{ row.authority.name }}</td><td class="num">{{ row.active }}</td><td class="num">{{ row.not_started }}</td><td class="num">{{ row.in_progress }}</td><td class="num">{{ row.overdue }}</td><td class="num">{{ row.average_open_age_days|default:"–" }}</td><td class="num">{{ row.median_resolution_days|default:"–" }}</td></tr>{% endfor %}
+  </tbody></table>
+</section>
+
+<section class="card" aria-labelledby="h-ageing">
+  <h2 id="h-ageing">Ageing report: not-started cases</h2>
+  {% if ageing.oldest %}
+  <table><thead><tr><th scope="col">Case</th><th scope="col">Title</th><th scope="col">Unit</th><th scope="col" class="num">Age (days)</th></tr></thead><tbody>
+    {% for c in ageing.oldest %}<tr><td>{{ c.case_number }}</td><td>{{ c.title }}</td><td>{{ c.authority|default:"–" }}</td><td class="num">{{ c.age_days }}{% if c.is_overdue %} <span class="badge-overdue">Overdue</span>{% endif %}</td></tr>{% endfor %}
+  </tbody></table>
+  {% else %}<p class="note">There are no not-started cases.</p>{% endif %}
+</section>
+
+<section class="card" aria-labelledby="h-suggestions">
+  <h2 id="h-suggestions">Suggestions</h2>
+  <table><thead><tr><th scope="col">Status</th><th scope="col" class="num">Suggestions</th></tr></thead><tbody>
+    {% for row in summary.suggestions.by_status %}<tr><td>{{ row.label }}</td><td class="num">{{ row.count }}</td></tr>{% endfor %}
+  </tbody></table>
+  <p class="note">Implementation rate: {% if summary.suggestions.implementation_rate.value is not None %}{{ summary.suggestions.implementation_rate.value }}% of accepted suggestions{% else %}no accepted suggestions yet{% endif %}.</p>
+</section>
+{% endblock %}
