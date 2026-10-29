@@ -55,9 +55,9 @@ Internal notes, assignment notes, deadline history and escalations are visible o
 | GET | `/categories/` | any | Active categories |
 | GET | `/authorities/` | admin | Active authorities |
 | GET | `/case-options/` | any | Enum labels, attachment limits, policy windows |
-| POST | `/auth/token/` | public (throttled) | **Placeholder (Member B):** `{username, password}` → `{token, user}` |
-| GET | `/auth/me/` | any | **Placeholder (Member B)** |
-| POST | `/auth/logout/` | any | **Placeholder (Member B)** |
+| POST | `/auth/token/` | public (throttled) | `{username, password}` → `{token, user}`. See "Platform endpoints" below |
+| GET / PATCH | `/auth/me/` | any | See "Platform endpoints" below |
+| POST | `/auth/logout/` | any | See "Platform endpoints" below |
 
 ### Submission example
 
@@ -88,3 +88,94 @@ The submitter's choice goes in `requested_priority`; only an administrator can c
 - **Storage:** files are saved under random names in `PRIVATE_MEDIA_ROOT`, which has no public URL. They are served only by the authorised download endpoint.
 
 **Production note:** in production, also cap request size at the reverse proxy (for example `client_max_body_size 60m;` in nginx).
+
+## Platform endpoints (Member B)
+
+These endpoints use the same conventions: the `/api/v1/` base path, the `Authorization: Token <key>` header, the error envelope, page-number pagination, and **404 for anything you can't see**. Permissions are capabilities defined on the user model (`apps/accounts/models.py`):
+
+| Capability | Roles |
+|---|---|
+| `view_dashboard` | Administrator, system administrator, faculty management |
+| `evaluate_suggestions` | Administrator, system administrator |
+| `manage_authorities` | Administrator, system administrator |
+| `manage_users`, `view_audit_log` | System administrator only |
+
+`GET /auth/me/` returns the signed-in user's `capabilities`. The app uses them to decide which navigation to show, but they are not access control.
+
+### Authentication
+
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/auth/token/` | `{username, password}`. `username` can also be the email address. Returns `{token, user}`. A still-valid token is reused; an expired one is replaced. Wrong credentials return `400` with the same message whether or not the account exists. Throttled with `login`. |
+| GET / PATCH | `/auth/me/` | PATCH accepts `contact_number` and `department` only. Names, email and role are managed by a system administrator. |
+| POST | `/auth/change-password/` | `{current_password, new_password}`. Django's password validators apply. Returns a **new** `{token, user}`, and every other device is signed out. |
+| POST | `/auth/logout/` | Revokes the token. |
+
+Tokens expire after `FMSC_TOKEN_TTL_HOURS` (default 12). After that, any request returns `401 authentication_failed` and the client must sign in again.
+
+### Notifications
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/notifications/?unread=true` | Your own notifications only, newest first. |
+| GET | `/notifications/unread-count/` | `{unread}` |
+| POST | `/notifications/{id}/read/` | Returns the updated notification. Another user's id returns `404`. |
+| POST | `/notifications/read-all/` | `{updated}` |
+
+Each notification has this shape: `{id, event_type, event_label, title, body, is_read, read_at, created_at, case_number, target}`.
+
+`target` tells the client what to open: `{"type": "case" | "suggestion", "id": <case id>}`. There are no create, update or delete endpoints.
+
+### Suggestions
+
+See [SUGGESTIONS.md](SUGGESTIONS.md).
+
+### Dashboard and reports (`view_dashboard`)
+
+Every endpoint takes the filters `date_from`, `date_to`, `category`, `priority`, `case_type`, `status` (comma-separated), `authority` and `location`. An invalid filter returns `400 validation_error`. Definitions are in [DASHBOARD_METRICS.md](DASHBOARD_METRICS.md).
+
+| Method | Path | Returns |
+|---|---|---|
+| GET | `/dashboard/summary/` | Totals, rates, times, breakdowns by status, category, priority, type and location, and suggestion outcomes |
+| GET | `/dashboard/trends/?interval=day\|week\|month` | `series: [{period, submitted, solved, closed}]` |
+| GET | `/dashboard/workload/` | Per-unit workload, plus the interpretation `note` |
+| GET | `/dashboard/ageing/?scope=not_started\|open` | Age buckets and the 50 oldest cases |
+| GET | `/reports/cases/` | Paginated case rows. `?export=csv` downloads every matching row; the CSV is safe against formula injection, every export is audited, and it is throttled with `report_export`. |
+
+A printable, server-rendered version of the report is at **`/manage/report/`**. It uses the Django session login and requires the same permission.
+
+### Audit log (`view_audit_log`)
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/audit-events/?action=&entity_type=&entity_id=&actor=&date_from=&date_to=` | Read-only. POST, PUT, PATCH and DELETE return `405`. |
+
+Each event has this shape: `{id, created_at, actor, actor_label, actor_role, action, entity_type, entity_id, entity_label, previous_value, new_value, reason, metadata, source}`.
+
+The actions recorded are:
+- **Cases:** `case.submitted`, `case.assigned`, `case.reassigned`, `case.status_changed`, `case.priority_changed`, `case.category_changed`, `case.deadline_changed`, `case.escalated`, `case.resolution_verified`, `case.update_added`, `case.attachment_downloaded`
+- **Suggestions:** `suggestion.<status>`, `suggestion.progress_recorded`
+- **Users:** `user.created`, `user.updated`, `user.role_changed`, `user.activated`, `user.deactivated`, `user.authorities_changed`, `user.password_reset`
+- **Authorities:** `authority.created`, `authority.updated`, `authority.activated`, `authority.deactivated`
+- **Sign-in:** `auth.login`, `auth.login_failed`, `auth.logout`, `auth.password_changed`
+- **Reports:** `report.exported`
+
+Passwords, tokens and complaint text (descriptions, comments, resolution notes, feedback) are never written to the audit log.
+
+### User and authority management
+
+| Method | Path | Who | Notes |
+|---|---|---|---|
+| GET / POST | `/manage/users/?search=&role=&is_active=` | `manage_users` | Creating a user requires a password that passes the validators. Emails must be unique, ignoring case. |
+| GET / PATCH | `/manage/users/{id}/` | `manage_users` | Accepts `role`, `is_active`, names, email, department, `authority_ids` and `password` (a reset). You can't change your own role or deactivate yourself. Deactivating an account or resetting its password ends that user's sessions. Only authority officers and administrators can belong to an authority; changing a user to any other role removes their memberships. There is no DELETE. |
+| GET / POST | `/manage/authorities/` | `manage_authorities` | Lists active and inactive authorities. |
+| PATCH | `/manage/authorities/{id}/` | `manage_authorities` | Deactivate instead of deleting. There is no DELETE. |
+
+### Scheduled jobs
+
+```
+*/15 * * * * python manage.py process_case_deadlines     # Member A: escalation and auto-closure
+0 * * * *    python manage.py send_deadline_reminders    # Member B: reminders FMSC_REMINDER_HOURS_BEFORE_DEADLINE (24) hours before a deadline
+```
+
+Both jobs are idempotent.

@@ -2,7 +2,20 @@
 
 This app is for the Faculty of Management Studies and Commerce, University of Sri Jayewardenepura.
 
-This repository currently contains **Member A's core case-management module**:
+This repository contains two integrated modules.
+
+**Member B's platform module:**
+- authentication with expiring tokens and role-based permissions
+- user and authority management
+- notifications (in-app, with optional email copies)
+- the append-only audit log
+- the management dashboard and reports
+- suggestion evaluation and implementation tracking
+- the matching Flutter screens and the shared design system
+
+See [docs/SUGGESTIONS.md](docs/SUGGESTIONS.md) and [docs/DASHBOARD_METRICS.md](docs/DASHBOARD_METRICS.md).
+
+**Member A's core case-management module:**
 - complaint submission
 - case tracking and the progress timeline
 - review and assignment
@@ -46,6 +59,7 @@ python manage.py runserver 0.0.0.0:8000
 ```
 
 - **Swagger UI:** http://localhost:8000/api/docs/
+- **Printable management report:** http://localhost:8000/manage/report/. Sign in through `/admin/login/` with an administrator or management account.
 - **Admin (reference data, routing rules, deadline policies, read-only case history):** http://localhost:8000/admin/
 
 ### Scheduled processing (production)
@@ -54,6 +68,12 @@ Run the deadline processor every 15 minutes. It is idempotent.
 
 ```
 */15 * * * * cd /srv/fmsc/backend && .venv/bin/python manage.py process_case_deadlines
+```
+
+Also run the deadline reminders every hour. This job is idempotent too.
+
+```
+0 * * * * cd /srv/fmsc/backend && .venv/bin/python manage.py send_deadline_reminders
 ```
 
 On Windows, create a Task Scheduler task that runs `.venv\Scripts\python.exe manage.py process_case_deadlines`.
@@ -80,4 +100,6 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1/   # Android 
 - [docs/API.md](docs/API.md): endpoints, errors, pagination and attachments
 - [docs/CASE_LIFECYCLE.md](docs/CASE_LIFECYCLE.md): statuses, transitions and the closure and deadline policy
 - [docs/SHARED_CONTRACTS.md](docs/SHARED_CONTRACTS.md): interfaces agreed (or to be agreed) with Member B
-- [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md): official USJ colours and sources, contrast checks and the UX principles used
+- [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md): official USJ colours and sources, contrast checks, platform tokens and components, and the UX principles used
+- [docs/DASHBOARD_METRICS.md](docs/DASHBOARD_METRICS.md): the definition of every dashboard figure
+- [docs/SUGGESTIONS.md](docs/SUGGESTIONS.md): suggestion statuses and how they map to the case lifecycle

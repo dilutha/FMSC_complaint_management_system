@@ -83,3 +83,63 @@ Ratios were computed with the WCAG relative-luminance formula. The AA minimum is
 | Recognition over recall | The reference number can be copied, statuses use plain-language labels, and the solved case shows what was done before asking the user to confirm. |
 | WCAG 1.4.1 | Status and priority always show icon and text, never colour alone. Badges expose semantic labels. |
 | Focus visibility | Inputs show a 2 px official-blue focus border. |
+
+## 7. Independent verification (Member B, 29 Oct 2026)
+
+On 29 October 2026, Member B rechecked the brand values against the live official branding page:
+
+- **Logo palette.** Downloaded `/wp-content/uploads/2020/10/Asset-1.png` ("USJP Logo Color Palette") and read it. It publishes red `#c1282d` (RGB 193, 40, 45), yellow `#f9eb24` (RGB 249, 235, 36) and black `#010101`. These match `UsjColors` exactly. They are **officially published codes, not values extracted from pixels**, so no approximation was needed.
+- **Logo file.** `mobile/assets/branding/usj_logo.png` has the same SHA-256 (`692918f0…a6ea3056`) as the live `usjp-logo-1.png`. It is used unmodified through the `UsjLogo` widget.
+- **Maroon.** The `#800000` versus RGB 127, 20, 22 discrepancy is still open. No new screen depends on it except the shared app-bar token.
+
+## 8. Platform tokens and components (shared with Member A)
+
+These are additive. No existing token or widget changed.
+
+| File | Contents |
+|---|---|
+| `lib/design/tokens.dart` | `Radii` (sm 8, md 12, pill), `Elevations` (none; overlay 3 for sheets and menus only), `ChartColors` (bar = official blue, track = surfaceMuted), `TextRoles` (KPI value with tabular figures, secondary label) |
+| `lib/design/platform_widgets.dart` | `KpiTile`, `BarRow` and `BreakdownList`, `SuggestionStatusBadge`, `showFormSheet`, `showSuccess` |
+| `lib/platform/paged_list.dart` | `PagedList<T>`: one implementation of the loading, empty, error-with-retry, pull-to-refresh and load-more pattern |
+
+**Usage rules for both members:**
+
+1. **Colour**
+   - Red is for primary actions only.
+   - Yellow is for selected states, with dark text on top.
+   - Maroon is for the app bar. It is also used for destructive confirmations such as **Decline**, so that they look different from the red primary action.
+   - Everything else uses the neutral tokens.
+2. **Status and state.** Always show an icon and text together:
+   - status badges;
+   - "Overdue";
+   - unread notifications (a dot plus the label "New");
+   - KPI alerts (a warning icon plus a red border).
+3. **Charts**
+   - Use a single series in a single hue (official blue) to show magnitude.
+   - Print the value as text; the bar is a visual aid.
+   - Don't use categorical palettes, gradients or decorative charts.
+   - Show trends as a table.
+4. **Progressive disclosure**
+   - The dashboard shows only the period selector.
+   - Other filters sit behind **Filters (n)**.
+   - Metric definitions sit behind "How these figures are calculated".
+   - Each action opens its own form sheet.
+5. **Forms**
+   - Validate on the device using the same limits as the server (for example, a decline reason needs at least 10 characters).
+   - Show server field errors under the matching field, using `ApiException.fieldError`.
+   - Disable controls while saving.
+   - Confirm success with a snackbar.
+6. **Navigation**
+   - Use a bottom `NavigationBar` with at most 5 role-appropriate destinations.
+   - Any link to a case calls `CaseRoutes.openCase`.
+
+**UX principles in the platform screens:**
+
+| Principle | Application |
+|---|---|
+| Jakob's law | Bottom navigation, app-bar back, pull-to-refresh, list → detail, modal bottom sheets for actions. |
+| Hick's law | Students see 3 tabs. The suggestion queue has 5 filter chips. The dashboard has 4 period presets, with everything else behind Filters. Each suggestion screen has one primary action. |
+| Fitts's law | Touch targets are at least 48 dp. Primary actions are full width. "New account" and "New authority" use bottom-right buttons. |
+| Miller's law | The dashboard is grouped into KPI tiles, report links and titled breakdown cards. Suggestion detail is split into Suggestion, Decision, Implementation and History. |
+| Nielsen | Loading, empty and error-with-retry states on every screen. A thin progress bar while the dashboard refreshes. Date pickers block past dates. Plain-language errors with the server message. |
+| WCAG | Contrast follows section 5. Semantics labels are set on KPI tiles, bars, badges, notifications and progress. Live regions announce errors. Slider values are announced as percentages. |
