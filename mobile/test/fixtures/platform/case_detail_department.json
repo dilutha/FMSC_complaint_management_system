@@ -1,0 +1,60 @@
+{
+  "id": 4,
+  "case_number": "FMSC-2026-00004",
+  "title": "Examination results missing on the student portal",
+  "case_type": "complaint",
+  "category": {
+    "id": 4,
+    "name": "Examination",
+    "code": "examination",
+    "description": ""
+  },
+  "priority": "normal",
+  "status": "in_progress",
+  "status_label": "In Progress",
+  "location": "Student portal",
+  "assigned_authority": {
+    "id": 3,
+    "name": "Examination Unit",
+    "code": "examination-unit",
+    "unit": ""
+  },
+  "created_at": "2026-10-30T00:42:28.728317+05:30",
+  "updated_at": "2026-10-30T00:42:28.738162+05:30",
+  "deadline_at": null,
+  "is_overdue": false,
+  "age_days": 0,
+  "submitter_role": "student",
+  "submitter_role_label": "Student",
+  "description": "My semester examination results are not visible on the student portal.",
+  "requested_priority": "normal",
+  "submitted_by": {
+    "id": 1,
+    "display_name": "Demo Student",
+    "role": "student"
+  },
+  "solved_at": null,
+  "closed_at": null,
+  "verification_due_at": null,
+  "reopen_count": 0,
+  "attachments": [],
+  "latest_resolution": null,
+  "allowed_actions": {
+    "transitions": [
+      "waiting_for_information",
+      "solved"
+    ],
+    "can_assign": false,
+    "can_verify_resolution": false,
+    "can_reopen": false,
+    "can_comment": true,
+    "can_post_admin_message": false,
+    "can_add_internal_note": true,
+    "can_change_deadline": false,
+    "can_reclassify": false,
+    "can_view_duplicates": false
+  },
+  "viewer_capacities": [
+    "authority"
+  ]
+}

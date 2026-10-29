@@ -66,3 +66,14 @@ These defaults are placeholders and **need the faculty's approval**.
 - **Recalculation:** the deadline is recalculated when an administrator changes priority or category (measured from submission), and when a case is reopened (measured from the reopening). Administrators can also set it manually with a required reason. All of these changes are recorded in `DeadlineChange`.
 - **Overdue** means an active status with `deadline_at` in the past. The API supports it as a filter (`?overdue=true`) and returns it as a field (`is_overdue`).
 - **Escalation:** `manage.py process_case_deadlines` (run on a schedule) raises level 1 at the deadline and level 2 after `FMSC_ESCALATION_LEVEL2_AFTER_HOURS`. The constraint UNIQUE(case, level, deadline_at) makes repeated runs idempotent. A new deadline can be escalated again. Each new event emits `case_escalated`.
+
+## Mandatory messages and role separation (added by Member B)
+
+- **Every status change made by staff needs a message.** This covers case administrators and the assigned department. The message must be at least 5 characters. It is saved in the same database transaction as the change, in `CaseStatusHistory.reason`, and the complainant sees it in the timeline. The rule lives in `workflow.transition()` (`MIN_STAFF_MESSAGE`). Marking a case solved uses its resolution note, of at least 10 characters, as the message. The submitter's own actions (confirming or reopening a case) and the scheduled job keep their existing rules.
+- **Assignment needs a message.** `assign_case(..., message=...)` and `POST /cases/{id}/assign/ {authority_id, message}` both require it. The message is recorded as "Assigned to <department>: <message>". The optional `internal_note` stays visible to staff only.
+- **History records who acted, and in what capacity.** `CaseStatusHistory` and `CaseUpdate` now store `actor_role`/`author_role` and `actor_authority`/`author_authority`. The complainant's timeline shows that role or department (for example "IT Department" or "Case Administrator") instead of staff names.
+- **Capacities:**
+  - Only case administrators (capacity A) review, assign and change status.
+  - Admins (`system_admin`, the new capacity `MONITOR`) can read every case and post `admin_message` updates. They cannot change status, assign cases or attach files.
+- **Who can submit:** only students, lecturers and non-academic staff.
+- **What departments can see:** department users (`authority`) see only cases currently assigned to their department, including when looking up a case by its id.

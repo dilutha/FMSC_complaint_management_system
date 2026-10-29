@@ -5,6 +5,7 @@ import '../features/auth/data/auth_repository.dart';
 import '../features/auth/data/platform_auth_session.dart';
 import '../features/dashboard/data/dashboard.dart';
 import '../features/notifications/data/notifications.dart';
+import '../features/staff/data/staff_cases.dart';
 import '../features/suggestions/data/suggestions.dart';
 
 /// Provides platform (Member B) dependencies to every platform screen.
@@ -19,6 +20,7 @@ class PlatformScope extends InheritedWidget {
     required this.dashboard,
     required this.suggestions,
     required this.admin,
+    required this.staffCases,
     required super.child,
   });
 
@@ -29,12 +31,17 @@ class PlatformScope extends InheritedWidget {
   final DashboardRepository dashboard;
   final SuggestionRepository suggestions;
   final AdminRepository admin;
+  final StaffCaseRepository staffCases;
 
   static PlatformScope of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<PlatformScope>();
     assert(scope != null, 'PlatformScope not found. Wrap the app in PlatformScope.');
     return scope!;
   }
+
+  /// Null outside the platform shell (e.g. when the case module runs standalone in tests).
+  static PlatformScope? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<PlatformScope>();
 
   @override
   bool updateShouldNotify(PlatformScope old) =>
@@ -43,5 +50,6 @@ class PlatformScope extends InheritedWidget {
       notifications != old.notifications ||
       dashboard != old.dashboard ||
       suggestions != old.suggestions ||
-      admin != old.admin;
+      admin != old.admin ||
+      staffCases != old.staffCases;
 }

@@ -8,6 +8,7 @@ import '../../design/widgets.dart';
 import '../../platform/platform_scope.dart';
 import '../admin/presentation/authorities_screen.dart';
 import '../admin/presentation/users_screen.dart';
+import '../home/home_page.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -72,6 +73,15 @@ class ProfileScreen extends StatelessWidget {
                 clipBehavior: Clip.antiAlias,
                 child: Column(
                   children: [
+                    ListTile(
+                      leading: const Icon(Icons.info_outline),
+                      title: const Text('About the system'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (c) => HomePage(onLogin: () {}, onDashboard: () => Navigator.of(c).pop()),
+                      )),
+                    ),
+                    const Divider(),
                     ListTile(
                       leading: const Icon(Icons.password),
                       title: const Text('Change password'),

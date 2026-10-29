@@ -139,12 +139,20 @@ class AllowedActions {
     this.canVerifyResolution = false,
     this.canReopen = false,
     this.canComment = false,
+    this.canAssign = false,
+    this.canPostAdminMessage = false,
   });
 
   final List<String> transitions;
   final bool canVerifyResolution;
   final bool canReopen;
   final bool canComment;
+
+  /// Case administrators: assign or reassign to a resolving department (Member B).
+  final bool canAssign;
+
+  /// Admins: post monitoring messages without workflow powers (Member B).
+  final bool canPostAdminMessage;
 
   factory AllowedActions.fromJson(Map<String, dynamic>? j) => j == null
       ? const AllowedActions()
@@ -153,6 +161,8 @@ class AllowedActions {
           canVerifyResolution: (j['can_verify_resolution'] as bool?) ?? false,
           canReopen: (j['can_reopen'] as bool?) ?? false,
           canComment: (j['can_comment'] as bool?) ?? false,
+          canAssign: (j['can_assign'] as bool?) ?? false,
+          canPostAdminMessage: (j['can_post_admin_message'] as bool?) ?? false,
         );
 }
 

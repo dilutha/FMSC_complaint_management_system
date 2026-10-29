@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../features/auth/data/current_user.dart';
 import '../features/cases/case_routes.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
+import '../features/dashboard/presentation/role_dashboard_screen.dart';
+import '../features/staff/presentation/staff_cases_screen.dart';
 import '../features/notifications/presentation/notifications_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/suggestions/presentation/suggestions_screen.dart';
@@ -17,17 +19,42 @@ class _Destination {
 }
 
 /// Main navigation: a standard bottom navigation bar (Jakob's law) with at
-/// most five role-appropriate destinations (Hick's law). Entries are hints
-/// only; the server enforces every permission.
-List<_Destination> _destinationsFor(CurrentUser user) => [
-  _Destination('Cases', Icons.folder_outlined, Icons.folder, (_) => CaseRoutes.myCases()),
-  if (user.canViewDashboard)
-    _Destination('Dashboard', Icons.insights_outlined, Icons.insights, (_) => const DashboardScreen()),
-  if (user.seesSuggestionQueue)
-    _Destination('Suggestions', Icons.lightbulb_outline, Icons.lightbulb, (_) => const SuggestionsScreen()),
-  _Destination('Alerts', Icons.notifications_none, Icons.notifications, (_) => const NotificationsScreen()),
-  _Destination('Profile', Icons.person_outline, Icons.person, (_) => const ProfileScreen()),
-];
+/// most five destinations chosen from the role the server reports (Hick's law).
+/// Entries are hints only; the server enforces every permission.
+List<_Destination> _destinationsFor(CurrentUser user, VoidCallback openCases) {
+  final dashboard = _Destination(
+    'Dashboard', Icons.space_dashboard_outlined, Icons.space_dashboard,
+    (_) => RoleDashboardScreen(onOpenCases: openCases),
+  );
+  final alerts = _Destination('Alerts', Icons.notifications_none, Icons.notifications, (_) => const NotificationsScreen());
+  final profile = _Destination('Profile', Icons.person_outline, Icons.person, (_) => const ProfileScreen());
+  final suggestions = _Destination(
+    'Suggestions', Icons.lightbulb_outline, Icons.lightbulb, (_) => const SuggestionsScreen());
+  return switch (user.workspace) {
+    // Complainers: own dashboard and own cases (Member A's My cases screen).
+    'complainer' => [
+      dashboard,
+      _Destination('My cases', Icons.folder_outlined, Icons.folder, (_) => CaseRoutes.myCases()),
+      alerts,
+      profile,
+    ],
+    'admin' || 'management' => [
+      dashboard,
+      _Destination('Cases', Icons.folder_outlined, Icons.folder, (_) => const StaffCasesScreen()),
+      _Destination('Reports', Icons.insights_outlined, Icons.insights, (_) => const DashboardScreen()),
+      alerts,
+      profile,
+    ],
+    // Case administrators and resolving departments.
+    _ => [
+      dashboard,
+      _Destination('Cases', Icons.folder_outlined, Icons.folder, (_) => const StaffCasesScreen()),
+      suggestions,
+      alerts,
+      profile,
+    ],
+  };
+}
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -70,7 +97,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final scope = PlatformScope.of(context);
     final user = scope.session.user!;
-    final destinations = _destinationsFor(user);
+    final destinations = _destinationsFor(user, () => setState(() => _index = 1));
     final index = _index.clamp(0, destinations.length - 1);
     return Scaffold(
       body: IndexedStack(

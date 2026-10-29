@@ -26,7 +26,7 @@ def events(user):
 def assigned_case(student, admin_user, maintenance, officer, make_case, run_events):
     with run_events():
         case = make_case(student)
-        assignment.assign_case(case, actor=admin_user, authority=maintenance)
+        assignment.assign_case(case, actor=admin_user, authority=maintenance, message="Assigned by test.")
     return Case.objects.get(pk=case.pk)
 
 
@@ -41,10 +41,12 @@ class TestRecipients:
         assert confirmation.target_type == "case" and confirmation.target_id == case.pk
         assert events(admin_user) == ["new_case"] and events(system_admin) == ["new_case"]
 
-    def test_admin_submitting_a_case_is_not_told_about_their_own_new_case(self, admin_user, make_case, run_events):
-        with run_events():
-            make_case(admin_user)
-        assert events(admin_user) == ["case_submitted"]
+    def test_staff_cannot_submit_cases_so_no_self_notification(self, admin_user, make_case):
+        from apps.cases.services.exceptions import NotPermitted
+
+        with pytest.raises(NotPermitted):
+            make_case(admin_user)  # only students, lecturers and non-academic staff submit
+        assert events(admin_user) == []
 
     def test_assignment_notifies_only_the_assigned_unit(self, assigned_case, officer, it_officer, student):
         assert "case_assigned" in events(officer)
@@ -55,7 +57,7 @@ class TestRecipients:
     def test_information_request_carries_the_reason(self, student, admin_user, make_case, run_events):
         case = make_case(student)
         with run_events():
-            workflow.transition(case, "under_review", actor=admin_user)
+            workflow.transition(case, "under_review", actor=admin_user, reason="Status update recorded by test.")
             workflow.transition(case, "waiting_for_information", actor=admin_user,
                                 reason="Which room is the projector in?")
         latest = inbox(student)[-1]
@@ -124,7 +126,7 @@ class TestRecipients:
 class TestDuplicatePrevention:
     def test_redelivered_event_creates_one_notification(self, assigned_case, officer, student, run_events):
         with run_events():
-            workflow.transition(assigned_case, "in_progress", actor=officer)
+            workflow.transition(assigned_case, "in_progress", actor=officer, reason="Status update recorded by test.")
         count = len(inbox(student))
         payload = {"from_status": "assigned", "to_status": "in_progress", "reason": ""}
         for _ in range(3):
@@ -171,7 +173,7 @@ class TestNotificationApi:
     def test_read_unread_flow(self, api, student, admin_user, make_case, run_events):
         with run_events():
             case = make_case(student)
-            workflow.transition(case, "under_review", actor=admin_user)
+            workflow.transition(case, "under_review", actor=admin_user, reason="Status update recorded by test.")
         client = api(student)
         assert client.get(f"{URL}unread-count/").data == {"unread": 2}
         first = client.get(URL).data["results"][0]

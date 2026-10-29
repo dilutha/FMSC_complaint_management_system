@@ -8,13 +8,16 @@ from django.core.management.base import BaseCommand
 
 from apps.cases.models import Authority, Category
 
+#: The four resolving departments (canonical codes never change; names are for display).
 AUTHORITIES = [
-    ("Maintenance Division", "maintenance"),
-    ("IT Unit", "it-unit"),
-    ("Dean's Office", "deans-office"),
-    ("Department Office", "department-office"),
+    ("IT Department", "it-unit"),
+    ("Maintenance Department", "maintenance"),
     ("Examination Unit", "examination-unit"),
+    ("Dean's Office", "deans-office"),
 ]
+#: Earlier default names, renamed once to the current ones. Names edited by an
+#: administrator are never overwritten.
+LEGACY_NAMES = {"it-unit": "IT Unit", "maintenance": "Maintenance Division"}
 CATEGORIES = [
     ("Classroom", "classroom", "maintenance"),
     ("IT", "it", "it-unit"),
@@ -29,7 +32,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         for name, code in AUTHORITIES:
-            Authority.objects.get_or_create(code=code, defaults={"name": name})
+            authority, created = Authority.objects.get_or_create(code=code, defaults={"name": name})
+            if not created and authority.name == LEGACY_NAMES.get(code):
+                authority.name = name
+                authority.save(update_fields=["name", "updated_at"])
         for order, (name, code, authority_code) in enumerate(CATEGORIES):
             Category.objects.get_or_create(
                 code=code,

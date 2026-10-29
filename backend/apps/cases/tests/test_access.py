@@ -36,17 +36,17 @@ class TestVisibility:
     def test_authority_sees_only_assigned_cases(self, api, student, admin_user, officer, it_unit, make_case):
         assigned = make_case(student)
         other = make_case(student, title="Wifi down in library")
-        assignment.assign_case(assigned, actor=admin_user, authority=officer.authorities.first())
-        assignment.assign_case(other, actor=admin_user, authority=it_unit)
+        assignment.assign_case(assigned, actor=admin_user, authority=officer.authorities.first(), message="Assigned by test.")
+        assignment.assign_case(other, actor=admin_user, authority=it_unit, message="Assigned by test.")
         res = api(officer).get(BASE)
         assert [c["id"] for c in res.data["results"]] == [assigned.pk]
         assert api(officer).get(f"{BASE}{other.pk}/").status_code == 404
 
     def test_reassignment_revokes_previous_authority_access(self, api, student, admin_user, officer, maintenance, it_unit, make_case):
         case = make_case(student)
-        assignment.assign_case(case, actor=admin_user, authority=maintenance)
+        assignment.assign_case(case, actor=admin_user, authority=maintenance, message="Assigned by test.")
         assert api(officer).get(f"{BASE}{case.pk}/").status_code == 200
-        assignment.assign_case(case, actor=admin_user, authority=it_unit)
+        assignment.assign_case(case, actor=admin_user, authority=it_unit, message="Assigned by test.")
         assert api(officer).get(f"{BASE}{case.pk}/").status_code == 404
 
 
@@ -54,13 +54,13 @@ class TestVisibility:
 class TestRolePermissions:
     def test_student_cannot_assign(self, api, student, maintenance, make_case):
         case = make_case(student)
-        res = api(student).post(f"{BASE}{case.pk}/assign/", {"authority_id": maintenance.pk})
+        res = api(student).post(f"{BASE}{case.pk}/assign/", {"authority_id": maintenance.pk, "message": "Assigned by test."})
         assert res.status_code == 403
         assert res.data["error"]["code"] == "permission_denied"
 
     def test_student_cannot_transition_own_case(self, api, student, make_case):
         case = make_case(student)
-        res = api(student).post(f"{BASE}{case.pk}/transition/", {"to_status": "under_review"})
+        res = api(student).post(f"{BASE}{case.pk}/transition/", {"to_status": "under_review", "reason": "Status update recorded by test."})
         assert res.status_code == 403
 
     def test_student_cannot_reclassify(self, api, student, make_case):
@@ -72,25 +72,25 @@ class TestRolePermissions:
         case = make_case(student)
         client = api(management)
         assert client.get(f"{BASE}{case.pk}/").status_code == 200
-        assert client.post(f"{BASE}{case.pk}/assign/", {"authority_id": maintenance.pk}).status_code == 403
-        assert client.post(f"{BASE}{case.pk}/transition/", {"to_status": "under_review"}).status_code == 403
+        assert client.post(f"{BASE}{case.pk}/assign/", {"authority_id": maintenance.pk, "message": "Assigned by test."}).status_code == 403
+        assert client.post(f"{BASE}{case.pk}/transition/", {"to_status": "under_review", "reason": "Status update recorded by test."}).status_code == 403
         assert client.post(f"{BASE}{case.pk}/updates/", {"body": "note"}).status_code == 403
 
     def test_authority_cannot_modify_unrelated_case(self, api, student, admin_user, it_officer, maintenance, make_case):
         case = make_case(student)
-        assignment.assign_case(case, actor=admin_user, authority=maintenance)
-        res = api(it_officer).post(f"{BASE}{case.pk}/transition/", {"to_status": "in_progress"})
+        assignment.assign_case(case, actor=admin_user, authority=maintenance, message="Assigned by test.")
+        res = api(it_officer).post(f"{BASE}{case.pk}/transition/", {"to_status": "in_progress", "reason": "Status update recorded by test."})
         assert res.status_code == 404
 
     def test_authority_cannot_assign(self, api, student, admin_user, officer, maintenance, it_unit, make_case):
         case = make_case(student)
-        assignment.assign_case(case, actor=admin_user, authority=maintenance)
-        res = api(officer).post(f"{BASE}{case.pk}/assign/", {"authority_id": it_unit.pk})
+        assignment.assign_case(case, actor=admin_user, authority=maintenance, message="Assigned by test.")
+        res = api(officer).post(f"{BASE}{case.pk}/assign/", {"authority_id": it_unit.pk, "message": "Assigned by test."})
         assert res.status_code == 403
 
     def test_only_admin_sees_duplicates_and_recommendation(self, api, student, officer, admin_user, maintenance, make_case):
         case = make_case(student)
-        assignment.assign_case(case, actor=admin_user, authority=maintenance)
+        assignment.assign_case(case, actor=admin_user, authority=maintenance, message="Assigned by test.")
         for user in (student, officer):
             assert api(user).get(f"{BASE}{case.pk}/potential-duplicates/").status_code == 403
             assert api(user).get(f"{BASE}{case.pk}/assignment-recommendation/").status_code == 403
@@ -102,7 +102,7 @@ class TestRolePermissions:
 class TestInternalNotes:
     def test_internal_notes_hidden_from_submitter(self, api, student, admin_user, officer, maintenance, make_case):
         case = make_case(student)
-        assignment.assign_case(case, actor=admin_user, authority=maintenance, internal_note="Check with contractor")
+        assignment.assign_case(case, actor=admin_user, authority=maintenance, internal_note="Check with contractor", message="Assigned by test.")
         updates.add_update(case, actor=officer, body="Internal: budget approval pending", is_internal=True)
         updates.add_update(case, actor=officer, body="Plumber visit scheduled", kind="progress")
 
@@ -111,8 +111,10 @@ class TestInternalNotes:
         assert "Plumber visit scheduled" in bodies
         assert "budget approval" not in bodies and "contractor" not in bodies
         assert all(e["type"] != "assignment" for e in student_view)
-        assert all(e["actor"]["name"] in {"You", "Faculty administrator", "Responsible authority", "System"}
-                   for e in student_view)
+        # Submitters see roles or departments, never individual staff names.
+        names = {e["actor"]["name"] for e in student_view}
+        assert admin_user.display_name not in names and officer.display_name not in names
+        assert names <= {"You", "System", "Case Administrator", "Maintenance Division"}
 
         upd = api(student).get(f"{BASE}{case.pk}/updates/").data["results"]
         assert [u["body"] for u in upd] == ["Plumber visit scheduled"]

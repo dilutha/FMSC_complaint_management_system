@@ -1,0 +1,260 @@
+{
+  "workspace": "case_admin",
+  "role": "case_admin",
+  "role_label": "Case Administrator",
+  "generated_at": "2026-10-29T19:12:29.420809+00:00",
+  "counts": {
+    "total": 9,
+    "complaints": 7,
+    "suggestions": 2,
+    "open": 8,
+    "new": 2,
+    "awaiting_review": 3,
+    "processing": 5,
+    "waiting_for_information": 0,
+    "assigned": 3,
+    "in_progress": 1,
+    "reopened": 0,
+    "resolved": 2,
+    "rejected": 0,
+    "overdue": 0,
+    "unassigned": 3,
+    "needs_reassignment": 0,
+    "pending_suggestions": 1,
+    "awaiting_action": 3
+  },
+  "recent": [
+    {
+      "id": 1,
+      "case_number": "FMSC-2026-00001",
+      "title": "Wi-Fi keeps dropping in Computer Lab 2",
+      "case_type": "complaint",
+      "status": "submitted",
+      "status_label": "Submitted",
+      "priority": "normal",
+      "category": "IT",
+      "assigned_authority": null,
+      "created_at": "2026-10-29T19:12:28.702785+00:00",
+      "updated_at": "2026-10-29T19:12:28.702793+00:00",
+      "is_overdue": false,
+      "submitter_role_label": "Student"
+    },
+    {
+      "id": 2,
+      "case_number": "FMSC-2026-00002",
+      "title": "Projector flickers in Lecture Hall B",
+      "case_type": "complaint",
+      "status": "under_review",
+      "status_label": "Under Review",
+      "priority": "normal",
+      "category": "Classroom",
+      "assigned_authority": null,
+      "created_at": "2026-10-29T19:12:28.708342+00:00",
+      "updated_at": "2026-10-29T19:12:28.710842+00:00",
+      "is_overdue": false,
+      "submitter_role_label": "Lecturer"
+    },
+    {
+      "id": 8,
+      "case_number": "FMSC-2026-00008",
+      "title": "Extend library opening hours during examinations",
+      "case_type": "suggestion",
+      "status": "submitted",
+      "status_label": "Submitted",
+      "priority": "normal",
+      "category": "Other",
+      "assigned_authority": null,
+      "created_at": "2026-10-29T19:12:28.801414+00:00",
+      "updated_at": "2026-10-29T19:12:28.801420+00:00",
+      "is_overdue": false,
+      "submitter_role_label": "Student"
+    }
+  ],
+  "by_status": [
+    {
+      "value": "submitted",
+      "label": "Submitted",
+      "count": 2
+    },
+    {
+      "value": "under_review",
+      "label": "Under Review",
+      "count": 1
+    },
+    {
+      "value": "waiting_for_information",
+      "label": "Waiting for Information",
+      "count": 0
+    },
+    {
+      "value": "assigned",
+      "label": "Assigned",
+      "count": 3
+    },
+    {
+      "value": "in_progress",
+      "label": "In Progress",
+      "count": 1
+    },
+    {
+      "value": "solved",
+      "label": "Solved – Awaiting Verification",
+      "count": 1
+    },
+    {
+      "value": "closed",
+      "label": "Closed",
+      "count": 1
+    },
+    {
+      "value": "rejected",
+      "label": "Rejected",
+      "count": 0
+    },
+    {
+      "value": "reopened",
+      "label": "Reopened",
+      "count": 0
+    }
+  ],
+  "by_department": [
+    {
+      "id": 4,
+      "name": "Dean's Office",
+      "is_active": true,
+      "total": 1,
+      "active": 1,
+      "overdue": 0,
+      "resolved": 0
+    },
+    {
+      "id": 3,
+      "name": "Examination Unit",
+      "is_active": true,
+      "total": 1,
+      "active": 1,
+      "overdue": 0,
+      "resolved": 0
+    },
+    {
+      "id": 1,
+      "name": "IT Department",
+      "is_active": true,
+      "total": 1,
+      "active": 0,
+      "overdue": 0,
+      "resolved": 1
+    },
+    {
+      "id": 2,
+      "name": "Maintenance Department",
+      "is_active": true,
+      "total": 3,
+      "active": 2,
+      "overdue": 0,
+      "resolved": 1
+    }
+  ],
+  "recent_activity": [
+    {
+      "case_id": 9,
+      "case_number": "FMSC-2026-00009",
+      "title": "Add charging points in the student study area",
+      "to_status": "assigned",
+      "to_status_label": "Assigned",
+      "actor": "Case Administrator",
+      "message": "Assigned to Maintenance Department: A useful improvement within this year's maintenance budget.",
+      "at": "2026-10-29T19:12:28.818665+00:00"
+    },
+    {
+      "case_id": 9,
+      "case_number": "FMSC-2026-00009",
+      "title": "Add charging points in the student study area",
+      "to_status": "submitted",
+      "to_status_label": "Submitted",
+      "actor": "Lecturer",
+      "message": "Case submitted.",
+      "at": "2026-10-29T19:12:28.805885+00:00"
+    },
+    {
+      "case_id": 8,
+      "case_number": "FMSC-2026-00008",
+      "title": "Extend library opening hours during examinations",
+      "to_status": "submitted",
+      "to_status_label": "Submitted",
+      "actor": "Student",
+      "message": "Case submitted.",
+      "at": "2026-10-29T19:12:28.801780+00:00"
+    },
+    {
+      "case_id": 7,
+      "case_number": "FMSC-2026-00007",
+      "title": "Broken chairs in Lecture Hall C",
+      "to_status": "closed",
+      "to_status_label": "Closed",
+      "actor": "Student",
+      "message": "Thank you, it is fixed.",
+      "at": "2026-10-29T19:12:28.797602+00:00"
+    },
+    {
+      "case_id": 7,
+      "case_number": "FMSC-2026-00007",
+      "title": "Broken chairs in Lecture Hall C",
+      "to_status": "solved",
+      "to_status_label": "Solved – Awaiting Verification",
+      "actor": "Maintenance Department",
+      "message": "Eight chairs were repaired and two were replaced.",
+      "at": "2026-10-29T19:12:28.788903+00:00"
+    },
+    {
+      "case_id": 7,
+      "case_number": "FMSC-2026-00007",
+      "title": "Broken chairs in Lecture Hall C",
+      "to_status": "in_progress",
+      "to_status_label": "In Progress",
+      "actor": "Maintenance Department",
+      "message": "The maintenance team has inspected the reported chairs.",
+      "at": "2026-10-29T19:12:28.783264+00:00"
+    },
+    {
+      "case_id": 7,
+      "case_number": "FMSC-2026-00007",
+      "title": "Broken chairs in Lecture Hall C",
+      "to_status": "assigned",
+      "to_status_label": "Assigned",
+      "actor": "Case Administrator",
+      "message": "Assigned to Maintenance Department: Furniture repairs are handled by the Maintenance Department.",
+      "at": "2026-10-29T19:12:28.778621+00:00"
+    },
+    {
+      "case_id": 7,
+      "case_number": "FMSC-2026-00007",
+      "title": "Broken chairs in Lecture Hall C",
+      "to_status": "submitted",
+      "to_status_label": "Submitted",
+      "actor": "Student",
+      "message": "Case submitted.",
+      "at": "2026-10-29T19:12:28.773159+00:00"
+    },
+    {
+      "case_id": 6,
+      "case_number": "FMSC-2026-00006",
+      "title": "Clarification needed on the leave approval process",
+      "to_status": "assigned",
+      "to_status_label": "Assigned",
+      "actor": "Case Administrator",
+      "message": "Assigned to Dean's Office: Faculty procedures are clarified by the Dean's Office.",
+      "at": "2026-10-29T19:12:28.768570+00:00"
+    },
+    {
+      "case_id": 6,
+      "case_number": "FMSC-2026-00006",
+      "title": "Clarification needed on the leave approval process",
+      "to_status": "submitted",
+      "to_status_label": "Submitted",
+      "actor": "Non-academic Staff",
+      "message": "Case submitted.",
+      "at": "2026-10-29T19:12:28.763941+00:00"
+    }
+  ]
+}

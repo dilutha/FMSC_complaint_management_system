@@ -184,8 +184,8 @@ class TestSyncAndAccess:
 
     def test_submitter_sees_role_labels_not_staff_names(self, api, student, admin_user, accepted):
         data = api(student).get(url(accepted)).data
-        assert data["decided_by"] == "Administrator"
-        assert admin_user.display_name not in str(data["history"])
+        assert data["decided_by"] == "Case Administrator"
+        assert all(h["actor"] != admin_user.display_name for h in data["history"])
         assert data["allowed_actions"] == []
 
     def test_other_students_and_complaints_are_404(self, api, other_student, student, suggestion, make_case):

@@ -1,0 +1,23 @@
+{
+  "id": 6,
+  "username": "demo_it",
+  "display_name": "Demo IT Officer",
+  "first_name": "Demo",
+  "last_name": "IT Officer",
+  "email": "demo_it@example.com",
+  "role": "authority",
+  "role_label": "Resolving Department",
+  "is_case_admin": false,
+  "department": "IT Department",
+  "contact_number": "",
+  "capabilities": [
+    "handle_assigned_cases"
+  ],
+  "authorities": [
+    {
+      "id": 1,
+      "name": "IT Department"
+    }
+  ],
+  "workspace": "department"
+}

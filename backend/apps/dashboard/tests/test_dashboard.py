@@ -32,13 +32,13 @@ def dataset(student, admin_user, officer, it_officer, maintenance, it_unit, cate
         c5 = make_case(student, title="Door lock jammed")
         c6 = make_case(student, title="Broken chair again")
     with run_events():
-        workflow.transition(c2, "under_review", actor=admin_user)
-        assignment.assign_case(c3, actor=admin_user, authority=maintenance)
-        assignment.assign_case(c4, actor=admin_user, authority=it_unit)
+        workflow.transition(c2, "under_review", actor=admin_user, reason="Status update recorded by test.")
+        assignment.assign_case(c3, actor=admin_user, authority=maintenance, message="Assigned by test.")
+        assignment.assign_case(c4, actor=admin_user, authority=it_unit, message="Assigned by test.")
     with run_events():
         workflow.transition(c4, "solved", actor=it_officer, resolution_note="Twelve sockets installed.")
     with run_events():
-        assignment.assign_case(c5, actor=admin_user, authority=maintenance)
+        assignment.assign_case(c5, actor=admin_user, authority=maintenance, message="Assigned by test.")
     with run_events():
         workflow.transition(c5, "solved", actor=officer, resolution_note="Lock replaced by locksmith.")
     with run_events():
@@ -48,7 +48,7 @@ def dataset(student, admin_user, officer, it_officer, maintenance, it_unit, cate
     with run_events():
         workflow.transition(c5, "solved", actor=officer, resolution_note="Lock mechanism replaced.")
     with run_events():
-        workflow.transition(c5, "closed", actor=admin_user)
+        workflow.transition(c5, "closed", actor=admin_user, reason="Status update recorded by test.")
     with run_events():
         workflow.transition(c6, "rejected", actor=admin_user, reason="Duplicate of an earlier case.")
     CaseLink.objects.create(from_case=c1, to_case=c6, link_type="duplicate", created_by=admin_user)

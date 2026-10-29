@@ -1,0 +1,49 @@
+{
+  "workspace": "department",
+  "role": "authority",
+  "role_label": "Resolving Department",
+  "generated_at": "2026-10-29T19:12:29.861970+00:00",
+  "counts": {
+    "total": 1,
+    "complaints": 1,
+    "suggestions": 0,
+    "open": 1,
+    "new": 0,
+    "awaiting_review": 0,
+    "processing": 0,
+    "waiting_for_information": 0,
+    "assigned": 0,
+    "in_progress": 0,
+    "reopened": 0,
+    "resolved": 1,
+    "rejected": 0,
+    "overdue": 0,
+    "unassigned": 0,
+    "needs_reassignment": 0,
+    "pending_suggestions": 0,
+    "awaiting_action": 0
+  },
+  "recent": [
+    {
+      "id": 5,
+      "case_number": "FMSC-2026-00005",
+      "title": "Statistics software licences expired in Lab 1",
+      "case_type": "complaint",
+      "status": "solved",
+      "status_label": "Solved – Awaiting Verification",
+      "priority": "urgent",
+      "category": "IT",
+      "assigned_authority": "IT Department",
+      "created_at": "2026-10-29T19:12:28.742804+00:00",
+      "updated_at": "2026-10-29T19:12:28.758743+00:00",
+      "is_overdue": false,
+      "submitter_role_label": "Lecturer"
+    }
+  ],
+  "department": [
+    {
+      "id": 1,
+      "name": "IT Department"
+    }
+  ]
+}

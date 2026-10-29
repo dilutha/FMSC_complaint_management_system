@@ -17,7 +17,7 @@ PROTECTED = [
     ("/api/v1/reports/cases/", {"management", "admin_user", "system_admin"}),
     ("/api/v1/audit-events/", {"system_admin"}),
     (USERS, {"system_admin"}),
-    (AUTHORITIES, {"admin_user", "system_admin"}),
+    (AUTHORITIES, {"system_admin"}),
 ]
 ROLES = ["student", "officer", "management", "admin_user", "system_admin"]
 
@@ -100,19 +100,19 @@ class TestUserManagement:
 
 @pytest.mark.django_db
 class TestAuthorityManagement:
-    def test_create_update_and_deactivate_are_audited(self, api, admin_user):
-        res = api(admin_user).post(AUTHORITIES, {"name": "Library", "code": "library", "unit": "Library services"})
+    def test_create_update_and_deactivate_are_audited(self, api, system_admin):
+        res = api(system_admin).post(AUTHORITIES, {"name": "Library", "code": "library", "unit": "Library services"})
         assert res.status_code == 201
         pk = res.data["id"]
-        assert api(admin_user).patch(f"{AUTHORITIES}{pk}/", {"is_active": False}).status_code == 200
+        assert api(system_admin).patch(f"{AUTHORITIES}{pk}/", {"is_active": False}).status_code == 200
         assert not Authority.objects.get(pk=pk).is_active
         actions = list(AuditEvent.objects.filter(entity_type="authority").values_list("action", flat=True))
         assert set(actions) == {"authority.created", "authority.deactivated"}
 
-    def test_lists_inactive_authorities_too(self, api, admin_user, maintenance):
+    def test_lists_inactive_authorities_too(self, api, system_admin, maintenance):
         Authority.objects.create(name="Old Unit", code="old", is_active=False)
-        names = {a["name"] for a in api(admin_user).get(AUTHORITIES).data}
+        names = {a["name"] for a in api(system_admin).get(AUTHORITIES).data}
         assert {"Maintenance Division", "Old Unit"} <= names
 
-    def test_authorities_cannot_be_deleted(self, api, admin_user, maintenance):
-        assert api(admin_user).delete(f"{AUTHORITIES}{maintenance.pk}/").status_code == 405
+    def test_authorities_cannot_be_deleted(self, api, system_admin, maintenance):
+        assert api(system_admin).delete(f"{AUTHORITIES}{maintenance.pk}/").status_code == 405

@@ -90,6 +90,7 @@ python manage.py showmigrations
 python manage.py migrate              # also locks Supabase's public Data API out of the tables
 python manage.py seed_reference_data  # categories and authorities from the proposal
 python manage.py seed_demo_users      # demo accounts for every role (development only)
+python manage.py seed_demo_data       # optional: representative demo cases in every state
 python manage.py createsuperuser      # optional: your own administrator account
 ```
 
@@ -101,17 +102,21 @@ All demo accounts use the password **`Password@123`**. It is stored hashed (PBKD
 
 > **This is a development-only password.** Never use it for real accounts, and never run `seed_demo_users` against production.
 
-| Username | Role | Can do |
-|---|---|---|
-| `demo_student` | Student | Submit and track own complaints and suggestions, confirm resolutions, reopen |
-| `demo_lecturer` | Lecturer | Same as a student |
-| `demo_authority` | Relevant Authority (Maintenance Division) | Handle cases and suggestions assigned to the Maintenance Division |
-| `demo_it_officer` | Relevant Authority (IT Unit) | Handle IT Unit cases. Cannot see Maintenance cases. |
-| `demo_case_admin` | Administrator | Review, assign, reject and close any case; decide on suggestions; dashboard; manage authorities |
-| `demo_management` | Faculty Management | Dashboard, reports and workload (read-only) |
-| `demo_system_admin` | System Administrator | Everything an administrator can do, plus user accounts, the audit log and Django admin |
+| Username | Role | Lands on | Can do |
+|---|---|---|---|
+| `demo_student` | Student | Student dashboard | Submit and track own complaints and suggestions |
+| `demo_lecturer` | Lecturer | Lecturer dashboard | Same as a student |
+| `demo_non_academic` | Non-academic staff | Non-academic staff dashboard | Same as a student |
+| `demo_system_admin` | Admin | Admin dashboard | Read every case and post admin messages; user accounts, departments and audit log. Cannot change statuses or assign cases. |
+| `demo_case_admin` | Case Administrator | Review queue | Review, assign to a department (with a message), change status (with a message), decide on suggestions |
+| `demo_it` | IT Department | IT Department dashboard | Cases assigned to the IT Department only |
+| `demo_maintenance` | Maintenance Department | Maintenance dashboard | Cases assigned to Maintenance only |
+| `demo_exams` | Examination Unit | Examination Unit dashboard | Cases assigned to the Examination Unit only |
+| `demo_deans_office` | Dean's Office | Dean's Office dashboard | Cases assigned to the Dean's Office only |
+| `demo_management` | Faculty Management | Faculty overview | Read-only reports |
 
-The application has no separate "department administrator" role. Administrators work across the whole faculty, and responsible units (authorities) are the boundary that limits what officers can see.
+`python manage.py seed_demo_data` adds 9 representative cases (it can be re-run safely). They cover every state: new, under review, assigned to each of the four departments, in progress, resolved and closed, plus two suggestions. They go through the real workflow, so their history and notifications are genuine. Like the demo users, it runs only when `DJANGO_DEBUG=true`.
+
 
 ### 6. Run the server
 

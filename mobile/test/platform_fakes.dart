@@ -13,6 +13,8 @@ import 'package:fmsc_cases/features/auth/data/token_store.dart';
 import 'package:fmsc_cases/features/cases/case_scope.dart';
 import 'package:fmsc_cases/features/cases/data/models.dart';
 import 'package:fmsc_cases/features/dashboard/data/dashboard.dart';
+import 'package:fmsc_cases/features/dashboard/data/overview.dart';
+import 'package:fmsc_cases/features/staff/data/staff_cases.dart';
 import 'package:fmsc_cases/features/notifications/data/notifications.dart';
 import 'package:fmsc_cases/features/suggestions/data/suggestions.dart';
 import 'package:fmsc_cases/platform/platform_scope.dart';
@@ -26,20 +28,20 @@ Map<String, dynamic> fixture(String name) =>
 
 List<dynamic> fixtureList(String name) => jsonDecode(File('test/fixtures/platform/$name').readAsStringSync()) as List;
 
-CurrentUser userWith(String role, Set<String> capabilities) => CurrentUser(
+CurrentUser userWith(String role, Set<String> capabilities, {String workspace = 'complainer'}) => CurrentUser(
   id: 1,
   username: 'test.$role',
   displayName: 'Test ${role.replaceAll('_', ' ')}',
   role: role,
   roleLabel: role,
   capabilities: capabilities,
+  workspace: workspace,
 );
 
-final studentUser = userWith('student', {});
-final managementUser = userWith('management', {'view_dashboard'});
-final adminUser = userWith('case_admin', {
-  'evaluate_suggestions', 'handle_assigned_cases', 'manage_authorities', 'view_dashboard',
-});
+final studentUser = userWith('student', {'submit_cases'});
+final managementUser = userWith('management', {'view_dashboard'}, workspace: 'management');
+final adminUser = userWith('case_admin', {'evaluate_suggestions', 'review_cases', 'view_dashboard'},
+    workspace: 'case_admin');
 
 ApiException apiError(int status, String message, [Map<String, dynamic> details = const {}]) =>
     ApiException(statusCode: status, code: status == 0 ? 'network' : 'error', message: message, details: details);
@@ -112,6 +114,18 @@ class FakeNotificationRepository implements NotificationRepository {
 
 class FakeDashboardRepository implements DashboardRepository {
   Object? error;
+
+  /// Which captured overview to return: complainer | case_admin | admin | department.
+  String overviewWorkspace = 'complainer';
+  int overviewCalls = 0;
+
+  @override
+  Future<DashboardOverview> overview() async {
+    overviewCalls++;
+    if (error != null) throw error!;
+    return DashboardOverview.fromJson(fixture('overview_$overviewWorkspace.json'));
+  }
+
   DashboardSummary summaryResult = DashboardSummary.fromJson(fixture('dashboard_summary.json'));
   final summaryCalls = <DashboardFilters>[];
 
@@ -215,6 +229,42 @@ class FakeAdminRepository implements AdminRepository {
   Future<ManagedAuthority> saveAuthority(int? id, Map<String, dynamic> data) async => throw UnimplementedError();
 }
 
+class FakeStaffCaseRepository implements StaffCaseRepository {
+  final calls = <String>[];
+  Object? actionError;
+  StaffCaseFilter? lastFilter;
+
+  @override
+  Future<PageResult<StaffCaseRow>> list(StaffCaseFilter filter, {int page = 1}) async {
+    lastFilter = filter;
+    final json = fixture('staff_cases_case_admin.json');
+    return PageResult(
+      count: json['count'] as int,
+      hasNext: false,
+      items: [for (final r in json['results'] as List) StaffCaseRow.fromJson(r as Map<String, dynamic>)],
+    );
+  }
+
+  @override
+  Future<List<({int id, String name})>> departments() async => [
+    for (final a in fixtureList('authorities.json')) (id: (a as Map)['id'] as int, name: a['name'] as String),
+  ];
+
+  @override
+  Future<void> assign(int caseId, {required int departmentId, required String message, String internalNote = ''}) async {
+    calls.add('assign:$caseId:$departmentId:$message');
+    if (actionError != null) throw actionError!;
+  }
+
+  @override
+  Future<void> changeStatus(int caseId, {required String toStatus, String message = '', String resolutionNote = ''}) async {
+    calls.add('status:$caseId:$toStatus:$message:$resolutionNote');
+    if (actionError != null) throw actionError!;
+  }
+}
+
+CurrentUser userFromFixture(String workspace) => CurrentUser.fromJson(fixture('me_$workspace.json'));
+
 class PlatformHarness {
   PlatformHarness({CurrentUser? user})
     : store = MemoryTokenStore(),
@@ -232,6 +282,7 @@ class PlatformHarness {
   final dashboard = FakeDashboardRepository();
   final suggestions = FakeSuggestionRepository();
   final admin = FakeAdminRepository();
+  final staffCases = FakeStaffCaseRepository();
   final FakeCaseRepository cases;
 
   Widget wrap(Widget child) => PlatformScope(
@@ -242,6 +293,7 @@ class PlatformHarness {
     dashboard: dashboard,
     suggestions: suggestions,
     admin: admin,
+    staffCases: staffCases,
     child: CaseScope(
       repository: cases,
       pickAttachments: ({required List<String> allowedExtensions}) async => const [],

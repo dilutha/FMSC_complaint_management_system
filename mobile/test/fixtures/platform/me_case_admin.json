@@ -1,0 +1,20 @@
+{
+  "id": 5,
+  "username": "demo_case_admin",
+  "display_name": "Demo Case Administrator",
+  "first_name": "Demo",
+  "last_name": "Case Administrator",
+  "email": "demo_case_admin@example.com",
+  "role": "case_admin",
+  "role_label": "Case Administrator",
+  "is_case_admin": true,
+  "department": "Faculty Office",
+  "contact_number": "",
+  "capabilities": [
+    "evaluate_suggestions",
+    "review_cases",
+    "view_dashboard"
+  ],
+  "authorities": [],
+  "workspace": "case_admin"
+}

@@ -80,12 +80,15 @@ class CaseListSerializer(serializers.ModelSerializer):
     status_label = serializers.CharField(source="get_status_display", read_only=True)
     is_overdue = serializers.BooleanField(read_only=True)
     age_days = serializers.IntegerField(read_only=True)
+    submitter_role = serializers.CharField(source="submitted_by.role", read_only=True)
+    submitter_role_label = serializers.CharField(source="submitted_by.get_role_display", read_only=True)
 
     class Meta:
         model = Case
         fields = [
             "id", "case_number", "title", "case_type", "category", "priority", "status", "status_label",
             "location", "assigned_authority", "created_at", "updated_at", "deadline_at", "is_overdue", "age_days",
+            "submitter_role", "submitter_role_label",
         ]
 
 
@@ -125,8 +128,9 @@ class CaseDetailSerializer(CaseListSerializer):
             "can_assign": "assigned" in targets,
             "can_verify_resolution": access.SUBMITTER in kinds and obj.status == CaseStatus.SOLVED,
             "can_reopen": "reopened" in targets,
-            "can_comment": bool(kinds & {access.ADMIN, access.AUTHORITY, access.SUBMITTER})
-            and (obj.status not in (CaseStatus.CLOSED, CaseStatus.REJECTED) or access.ADMIN in kinds),
+            "can_comment": bool(kinds & {access.ADMIN, access.AUTHORITY, access.SUBMITTER, access.MONITOR})
+            and (obj.status not in (CaseStatus.CLOSED, CaseStatus.REJECTED) or bool(kinds & {access.ADMIN, access.MONITOR})),
+            "can_post_admin_message": access.MONITOR in kinds,
             "can_add_internal_note": bool(kinds & {access.ADMIN, access.AUTHORITY}),
             "can_change_deadline": access.ADMIN in kinds,
             "can_reclassify": access.ADMIN in kinds,
@@ -171,6 +175,9 @@ class TransitionSerializer(serializers.Serializer):
 
 class AssignSerializer(serializers.Serializer):
     authority_id = serializers.PrimaryKeyRelatedField(queryset=Authority.objects.all(), source="authority")
+    message = serializers.CharField(
+        max_length=2000, help_text="Why this department; shown in the case history (required)."
+    )
     internal_note = serializers.CharField(max_length=2000, required=False, allow_blank=True)
 
 

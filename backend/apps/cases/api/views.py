@@ -68,6 +68,14 @@ class CaseViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
             qs = qs.filter(category_id=p["category"])
         if p.get("assigned_authority", "").isdigit():
             qs = qs.filter(assigned_authority_id=p["assigned_authority"])
+        # Member B filters for the admin, case-administrator and department dashboards.
+        # They narrow the already visibility-filtered queryset, so they never widen access.
+        if p.get("submitter_role"):
+            qs = qs.filter(submitted_by__role__in=p["submitter_role"].split(","))
+        if p.get("unassigned") == "true":
+            qs = qs.filter(assigned_authority__isnull=True)
+        if p.get("queue") == "review":
+            qs = qs.filter(status__in=[CaseStatus.SUBMITTED, CaseStatus.UNDER_REVIEW, CaseStatus.REOPENED])
         if p.get("mine") == "true":
             qs = qs.filter(submitted_by=self.request.user)
         if p.get("active") == "true":
@@ -93,6 +101,9 @@ class CaseViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
             OpenApiParameter("priority", str, enum=Priority.values),
             OpenApiParameter("category", int),
             OpenApiParameter("assigned_authority", int),
+            OpenApiParameter("submitter_role", str, description="Comma-separated: student, lecturer, non_academic_staff"),
+            OpenApiParameter("unassigned", bool),
+            OpenApiParameter("queue", str, enum=["review"], description="Cases awaiting case-administrator review"),
             OpenApiParameter("mine", bool),
             OpenApiParameter("active", bool),
             OpenApiParameter("overdue", bool),
@@ -161,6 +172,7 @@ class CaseViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
             case,
             actor=request.user,
             authority=ser.validated_data["authority"],
+            message=ser.validated_data.get("message", ""),
             internal_note=ser.validated_data.get("internal_note", ""),
         )
         return self._detail(case)

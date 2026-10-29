@@ -23,16 +23,27 @@ from apps.cases.models import Authority
 DEMO_PASSWORD = "Password@123"  # development/demo only; documented in README
 DEMO_DOMAIN = "example.com"  # reserved for documentation (RFC 2606)
 
-#: username, role, first name, last name, department, authority code (unit membership)
+#: username, role, first name, last name, department text, department code (membership)
 DEMO_USERS = [
+    # Group 1: complainers
     ("demo_student", Role.STUDENT, "Demo", "Student", "Department of Accounting", None),
     ("demo_lecturer", Role.LECTURER, "Demo", "Lecturer", "Department of Marketing Management", None),
-    ("demo_authority", Role.AUTHORITY, "Demo", "Maintenance Officer", "Maintenance Division", "maintenance"),
-    ("demo_it_officer", Role.AUTHORITY, "Demo", "IT Officer", "IT Unit", "it-unit"),
+    ("demo_non_academic", Role.NON_ACADEMIC_STAFF, "Demo", "Non-academic Staff", "Faculty Office", None),
+    # Group 2: admin (monitoring and messages)
+    ("demo_system_admin", Role.SYSTEM_ADMIN, "Demo", "Admin", "Faculty Office", None),
+    # Group 3: case administrator
     ("demo_case_admin", Role.CASE_ADMIN, "Demo", "Case Administrator", "Faculty Office", None),
+    # Group 4: resolving departments (one department each)
+    ("demo_it", Role.AUTHORITY, "Demo", "IT Officer", "IT Department", "it-unit"),
+    ("demo_maintenance", Role.AUTHORITY, "Demo", "Maintenance Officer", "Maintenance Department", "maintenance"),
+    ("demo_exams", Role.AUTHORITY, "Demo", "Examination Officer", "Examination Unit", "examination-unit"),
+    ("demo_deans_office", Role.AUTHORITY, "Demo", "Dean's Office Officer", "Dean's Office", "deans-office"),
+    # Read-only reporting viewer from the original proposal
     ("demo_management", Role.MANAGEMENT, "Demo", "Faculty Manager", "Dean's Office", None),
-    ("demo_system_admin", Role.SYSTEM_ADMIN, "Demo", "System Administrator", "IT Unit", None),
 ]
+
+#: Earlier demo usernames, renamed in place (never duplicated).
+RENAMED = {"demo_it_officer": "demo_it", "demo_authority": "demo_maintenance"}
 
 
 class Command(BaseCommand):
@@ -52,6 +63,9 @@ class Command(BaseCommand):
         call_command("seed_reference_data", stdout=self.stdout)  # authorities and categories (idempotent)
         created, updated = [], []
         with transaction.atomic():
+            for old, new in RENAMED.items():
+                if not User.objects.filter(username=new).exists():
+                    User.objects.filter(username=old).update(username=new)
             for username, role, first, last, department, authority_code in DEMO_USERS:
                 user, is_new = User.objects.get_or_create(username=username)
                 user.role = role
@@ -59,9 +73,10 @@ class Command(BaseCommand):
                 user.email = f"{username}@{DEMO_DOMAIN}"
                 user.department = department
                 user.is_active = True
-                # Django admin access only for the system administrator demo account.
-                user.is_staff = role == Role.SYSTEM_ADMIN
-                user.is_superuser = role == Role.SYSTEM_ADMIN
+                # No demo account is a Django superuser: a superuser would bypass the
+                # separation between admins and case administrators.
+                user.is_staff = False
+                user.is_superuser = False
                 user.set_password(DEMO_PASSWORD)  # hashed with settings.PASSWORD_HASHERS
                 user.save()
                 memberships = list(Authority.objects.filter(code=authority_code)) if authority_code else []

@@ -130,6 +130,26 @@ Each notification has this shape: `{id, event_type, event_label, title, body, is
 
 See [SUGGESTIONS.md](SUGGESTIONS.md).
 
+### Role dashboard (every signed-in user)
+
+| Method | Path | Returns |
+|---|---|---|
+| GET | `/dashboard/overview/` | `{workspace, role, role_label, counts, recent}`, plus `department` for departments and `by_status`, `by_department` and `recent_activity` for faculty-wide roles |
+
+The server picks the scope from the user's role; the client never chooses it:
+
+| Workspace | Scope |
+|---|---|
+| `complainer` | cases the user submitted |
+| `department` | cases currently assigned to the user's department |
+| `case_admin`, `admin`, `management` | every case |
+
+Counts are always computed from the same queryset as `GET /cases/`, so they never reveal more than the lists do.
+
+The case list also accepts the filters `submitter_role` (comma-separated), `unassigned=true` and `queue=review`. All of them narrow what the user can already see.
+
+**Admin messages:** an admin posts `POST /cases/{id}/updates/ {body}`. The message is stored with kind `admin_message`. Adding `new_status` or attachments returns `403`.
+
 ### Dashboard and reports (`view_dashboard`)
 
 Every endpoint takes the filters `date_from`, `date_to`, `category`, `priority`, `case_type`, `status` (comma-separated), `authority` and `location`. An invalid filter returns `400 validation_error`. Definitions are in [DASHBOARD_METRICS.md](DASHBOARD_METRICS.md).

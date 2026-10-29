@@ -73,6 +73,9 @@ class _LoginScreenState extends State<LoginScreen> {
       final result = await scope.auth.signIn(_username.text.trim(), _password.text);
       _password.clear();
       await scope.session.signIn(token: result.token, user: result.user);
+      // Opened from the public home page: close the sign-in route so the
+      // role-specific dashboard underneath is shown.
+      if (mounted && Navigator.of(context).canPop()) Navigator.of(context).popUntil((r) => r.isFirst);
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = _messageFor(e));
     } catch (e, stack) {
@@ -88,6 +91,13 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
+      appBar: Navigator.of(context).canPop()
+          ? AppBar(
+              title: const Text('Sign in'),
+              backgroundColor: UsjColors.surface,
+              foregroundColor: UsjColors.maroon,
+            )
+          : null,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

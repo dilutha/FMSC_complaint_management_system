@@ -15,13 +15,13 @@ NOTE = "Replaced the leaking pipe section and dried the ceiling."
 @pytest.fixture
 def assigned_case(student, admin_user, maintenance, make_case):
     case = make_case(student)
-    workflow.transition(case, CaseStatus.UNDER_REVIEW, actor=admin_user)
-    return assignment.assign_case(case, actor=admin_user, authority=maintenance)
+    workflow.transition(case, CaseStatus.UNDER_REVIEW, actor=admin_user, reason="Status update recorded by test.")
+    return assignment.assign_case(case, actor=admin_user, authority=maintenance, message="Assigned by test.")
 
 
 @pytest.fixture
 def solved_case(assigned_case, officer):
-    workflow.transition(assigned_case, CaseStatus.IN_PROGRESS, actor=officer)
+    workflow.transition(assigned_case, CaseStatus.IN_PROGRESS, actor=officer, reason="Status update recorded by test.")
     return workflow.transition(assigned_case, CaseStatus.SOLVED, actor=officer, resolution_note=NOTE)
 
 
@@ -30,8 +30,8 @@ class TestLifecycle:
     def test_full_happy_path_via_api(self, api, student, admin_user, officer, maintenance, make_case):
         case = make_case(student)
         admin = api(admin_user)
-        assert admin.post(f"{BASE}{case.pk}/transition/", {"to_status": "under_review"}).data["status"] == "under_review"
-        res = admin.post(f"{BASE}{case.pk}/assign/", {"authority_id": maintenance.pk, "internal_note": "Urgent"})
+        assert admin.post(f"{BASE}{case.pk}/transition/", {"to_status": "under_review", "reason": "Status update recorded by test."}).data["status"] == "under_review"
+        res = admin.post(f"{BASE}{case.pk}/assign/", {"authority_id": maintenance.pk, "internal_note": "Urgent", "message": "Assigned by test."})
         assert res.status_code == 200 and res.data["status"] == "assigned"
         assert res.data["assigned_authority"]["id"] == maintenance.pk
 
@@ -62,20 +62,20 @@ class TestLifecycle:
     def test_invalid_transitions_rejected(self, student, admin_user, make_case, start, target):
         case = make_case(student)
         if start == "under_review":
-            workflow.transition(case, start, actor=admin_user)
+            workflow.transition(case, start, actor=admin_user, reason="Status update recorded by test.")
         with pytest.raises(InvalidTransition):
             workflow.transition(case, target, actor=admin_user, reason="x" * 20, resolution_note="x" * 20)
 
     def test_invalid_transition_api_returns_409(self, api, student, admin_user, make_case):
         case = make_case(student)
-        res = api(admin_user).post(f"{BASE}{case.pk}/transition/", {"to_status": "closed"})
+        res = api(admin_user).post(f"{BASE}{case.pk}/transition/", {"to_status": "closed", "reason": "Status update recorded by test."})
         assert res.status_code == 409
         assert res.data["error"]["code"] == "invalid_transition"
 
     def test_assigned_cannot_be_set_via_transition(self, student, admin_user, make_case):
         case = make_case(student)
         with pytest.raises(InvalidTransition):
-            workflow.transition(case, CaseStatus.ASSIGNED, actor=admin_user)
+            workflow.transition(case, CaseStatus.ASSIGNED, actor=admin_user, reason="Status update recorded by test.")
 
     def test_rejection_requires_reason(self, api, student, admin_user, make_case):
         case = make_case(student)
@@ -100,14 +100,14 @@ class TestLifecycle:
 
     def test_cannot_start_work_without_assignment(self, student, admin_user, make_case):
         case = make_case(student)
-        workflow.transition(case, CaseStatus.UNDER_REVIEW, actor=admin_user)
+        workflow.transition(case, CaseStatus.UNDER_REVIEW, actor=admin_user, reason="Status update recorded by test.")
         workflow.transition(case, CaseStatus.WAITING_FOR_INFORMATION, actor=admin_user, reason="Which room exactly?")
         with pytest.raises(InvalidTransition):
-            workflow.transition(case, CaseStatus.IN_PROGRESS, actor=admin_user)
+            workflow.transition(case, CaseStatus.IN_PROGRESS, actor=admin_user, reason="Status update recorded by test.")
 
     def test_waiting_for_information_requires_and_shows_request(self, api, student, admin_user, make_case):
         case = make_case(student)
-        workflow.transition(case, CaseStatus.UNDER_REVIEW, actor=admin_user)
+        workflow.transition(case, CaseStatus.UNDER_REVIEW, actor=admin_user, reason="Status update recorded by test.")
         with pytest.raises(ValidationFailed):
             workflow.transition(case, CaseStatus.WAITING_FOR_INFORMATION, actor=admin_user)
         workflow.transition(case, CaseStatus.WAITING_FOR_INFORMATION, actor=admin_user, reason="Please add a photo.")
@@ -118,7 +118,7 @@ class TestLifecycle:
 
     def test_authority_of_other_unit_cannot_transition(self, assigned_case, it_officer):
         with pytest.raises(NotPermitted):
-            workflow.transition(assigned_case, CaseStatus.IN_PROGRESS, actor=it_officer)
+            workflow.transition(assigned_case, CaseStatus.IN_PROGRESS, actor=it_officer, reason="Status update recorded by test.")
 
     def test_status_change_signal(self, assigned_case, officer, django_capture_on_commit_callbacks):
         seen = []
@@ -126,10 +126,10 @@ class TestLifecycle:
         signals.case_status_changed.connect(handler)
         try:
             with django_capture_on_commit_callbacks(execute=True):
-                workflow.transition(assigned_case, CaseStatus.IN_PROGRESS, actor=officer)
+                workflow.transition(assigned_case, CaseStatus.IN_PROGRESS, actor=officer, reason="Status update recorded by test.")
         finally:
             signals.case_status_changed.disconnect(handler)
-        assert seen == [{"from_status": "assigned", "to_status": "in_progress", "reason": ""}]
+        assert seen == [{"from_status": "assigned", "to_status": "in_progress", "reason": "Status update recorded by test."}]
 
     def test_failing_receiver_does_not_break_transition(self, assigned_case, officer, django_capture_on_commit_callbacks):
         def broken(**kwargs):
@@ -138,7 +138,7 @@ class TestLifecycle:
         signals.case_status_changed.connect(broken)
         try:
             with django_capture_on_commit_callbacks(execute=True):
-                case = workflow.transition(assigned_case, CaseStatus.IN_PROGRESS, actor=officer)
+                case = workflow.transition(assigned_case, CaseStatus.IN_PROGRESS, actor=officer, reason="Status update recorded by test.")
         finally:
             signals.case_status_changed.disconnect(broken)
         assert case.status == "in_progress"
@@ -175,7 +175,7 @@ class TestVerificationAndReopen:
         assert first.submitter_feedback == "Still leaking after rain."
 
         # The authority resolves again; both resolutions are kept.
-        workflow.transition(solved_case, CaseStatus.IN_PROGRESS, actor=officer)
+        workflow.transition(solved_case, CaseStatus.IN_PROGRESS, actor=officer, reason="Status update recorded by test.")
         workflow.transition(solved_case, CaseStatus.SOLVED, actor=officer, resolution_note="Roof membrane resealed fully.")
         assert solved_case.resolutions.count() == 2
         assert list(solved_case.resolutions.values_list("outcome", flat=True)) == ["disputed", "pending"]

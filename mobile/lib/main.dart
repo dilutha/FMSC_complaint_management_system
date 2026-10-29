@@ -13,7 +13,9 @@ import 'features/cases/case_scope.dart';
 import 'features/cases/data/case_repository.dart';
 import 'features/cases/platform_attachment_picker.dart';
 import 'features/dashboard/data/dashboard.dart';
+import 'features/home/home_page.dart';
 import 'features/notifications/data/notifications.dart';
+import 'features/staff/data/staff_cases.dart';
 import 'features/suggestions/data/suggestions.dart';
 import 'platform/app_shell.dart';
 import 'platform/platform_scope.dart';
@@ -40,6 +42,7 @@ class FmscApp extends StatefulWidget {
     required this.dashboard,
     required this.suggestions,
     required this.admin,
+    required this.staffCases,
     this.pickAttachments = pickAttachmentsFromDevice,
   });
 
@@ -51,6 +54,7 @@ class FmscApp extends StatefulWidget {
     dashboard: ApiDashboardRepository(api),
     suggestions: ApiSuggestionRepository(api),
     admin: ApiAdminRepository(api),
+    staffCases: ApiStaffCaseRepository(api),
   );
 
   final PlatformAuthSession session;
@@ -60,6 +64,7 @@ class FmscApp extends StatefulWidget {
   final DashboardRepository dashboard;
   final SuggestionRepository suggestions;
   final AdminRepository admin;
+  final StaffCaseRepository staffCases;
   final AttachmentPicker pickAttachments;
 
   @override
@@ -68,16 +73,31 @@ class FmscApp extends StatefulWidget {
 
 class _FmscAppState extends State<FmscApp> {
   late final UnreadCounter _unread = UnreadCounter(widget.notifications);
+  final _navigator = GlobalKey<NavigatorState>();
+  SessionState? _lastState;
+
+  /// When the session ends (sign-out or expired token), close every pushed
+  /// screen so nothing from the previous user stays visible.
+  void _onSession() {
+    final state = widget.session.state;
+    if (state == SessionState.signedOut && _lastState == SessionState.signedIn) {
+      _navigator.currentState?.popUntil((r) => r.isFirst);
+    }
+    _lastState = state;
+  }
 
   @override
   void initState() {
     super.initState();
+    _lastState = widget.session.state;
+    widget.session.addListener(_onSession);
     widget.session.revokeOnServer = widget.auth.revoke;
     if (widget.session.state == SessionState.restoring) widget.session.restore(widget.auth.me);
   }
 
   @override
   void dispose() {
+    widget.session.removeListener(_onSession);
     _unread.dispose();
     super.dispose();
   }
@@ -92,10 +112,12 @@ class _FmscAppState extends State<FmscApp> {
       dashboard: widget.dashboard,
       suggestions: widget.suggestions,
       admin: widget.admin,
+      staffCases: widget.staffCases,
       child: CaseScope(
         repository: widget.caseRepository,
         pickAttachments: widget.pickAttachments,
         child: MaterialApp(
+          navigatorKey: _navigator,
           title: 'FMSC Complaints & Suggestions',
           debugShowCheckedModeBanner: false,
           theme: buildUsjTheme(),
@@ -104,7 +126,14 @@ class _FmscAppState extends State<FmscApp> {
             builder: (context, _) => switch (widget.session.state) {
               SessionState.restoring => const Scaffold(body: LoadingView(message: 'Signing you in…')),
               SessionState.signedIn => AppShell(key: ValueKey(widget.session.user?.id)),
-              SessionState.signedOut => const LoginScreen(),
+              // Public home page; its Login buttons open the existing sign-in screen.
+              SessionState.signedOut => Builder(
+                builder: (context) => HomePage(
+                  onLogin: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const LoginScreen(), settings: const RouteSettings(name: 'login')),
+                  ),
+                ),
+              ),
             },
           ),
         ),

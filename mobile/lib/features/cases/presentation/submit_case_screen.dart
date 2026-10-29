@@ -10,7 +10,10 @@ import '../data/models.dart';
 import 'submission_confirmation_screen.dart';
 
 class SubmitCaseScreen extends StatefulWidget {
-  const SubmitCaseScreen({super.key});
+  const SubmitCaseScreen({super.key, this.initialType = 'complaint'});
+
+  /// 'complaint' or 'suggestion' (the dashboard's two submit buttons preselect it).
+  final String initialType;
 
   @override
   State<SubmitCaseScreen> createState() => _SubmitCaseScreenState();
@@ -22,7 +25,7 @@ class _SubmitCaseScreenState extends State<SubmitCaseScreen> {
   final _description = TextEditingController();
   final _location = TextEditingController();
 
-  String _caseType = 'complaint';
+  late String _caseType = widget.initialType;
   String _priority = 'normal';
   int? _categoryId;
   bool _declaration = false;

@@ -156,7 +156,7 @@ def start_evaluation(case: Case, *, actor) -> SuggestionEvaluation:
             raise InvalidTransition("Evaluation has already started for this suggestion.")
         _set_status(evaluation, St.UNDER_EVALUATION, actor=actor, reason="Evaluation started.")
         if case.status == CS.SUBMITTED:
-            transition(case, CS.UNDER_REVIEW, actor=actor)
+            transition(case, CS.UNDER_REVIEW, actor=actor, reason="Suggestion evaluation started.")
     return evaluation
 
 
@@ -176,7 +176,8 @@ def accept(case: Case, *, actor, responsible_unit, reason="", target_date=None) 
             responsible_unit=responsible_unit, decision_reason=reason, decided_by=actor, decided_at=timezone.now(),
             target_date=target_date or evaluation.target_date,
         )
-        assign_case(case, actor=actor, authority=responsible_unit, internal_note=reason)
+        assign_case(case, actor=actor, authority=responsible_unit,
+                    message=reason or "Accepted for implementation.", internal_note=reason)
     return evaluation
 
 
@@ -254,7 +255,7 @@ def record_progress(case: Case, *, actor, note, percent_complete=None) -> Sugges
             evaluation.progress_percent = percent_complete
             evaluation.save(update_fields=["progress_percent", "updated_at"])
         if Case.objects.get(pk=case.pk).status in (CS.ASSIGNED, CS.REOPENED):
-            transition(case, CS.IN_PROGRESS, actor=actor)
+            transition(case, CS.IN_PROGRESS, actor=actor, reason=f"Implementation started: {note}")
         audit("suggestion.progress_recorded", actor=actor, entity_type="suggestion", entity_id=case.pk,
               entity_label=case.case_number, new={"percent_complete": percent_complete},
               metadata={"progress_update_id": update.pk})

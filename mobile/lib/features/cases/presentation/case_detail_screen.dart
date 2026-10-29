@@ -11,6 +11,7 @@ import 'attachment_viewer_screen.dart';
 import 'case_timeline.dart';
 import 'reopen_case_screen.dart';
 import 'verify_resolution_screen.dart';
+import '../../staff/presentation/case_staff_actions.dart';
 
 class CaseDetailScreen extends StatefulWidget {
   const CaseDetailScreen({super.key, required this.caseId});
@@ -102,6 +103,11 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
             if (c.isOverdue) const OverdueBadge(),
           ],
         ),
+        // Member B: staff review, assignment and status actions (hidden for complainers).
+        if (CaseStaffActions.shouldShow(context, c)) ...[
+          const SizedBox(height: Space.lg),
+          CaseStaffActions(detail: c, onChanged: _refresh),
+        ],
         if (c.actions.canVerifyResolution) ...[
           const SizedBox(height: Space.lg),
           _VerifyBanner(

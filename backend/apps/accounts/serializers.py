@@ -15,8 +15,8 @@ def check_password_strength(password, user, field):
         raise serializers.ValidationError({field: list(exc.messages)}) from exc
 
 
-#: Roles whose users may be members of an authority (and so act on its cases).
-AUTHORITY_MEMBER_ROLES = {Role.AUTHORITY, Role.CASE_ADMIN, Role.SYSTEM_ADMIN}
+#: Only resolving-department users belong to a department (and so act on its cases).
+AUTHORITY_MEMBER_ROLES = {Role.AUTHORITY}
 
 
 class AuthorityRefSerializer(serializers.ModelSerializer):
@@ -36,9 +36,9 @@ class MeSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "username", "display_name", "first_name", "last_name", "email", "role", "role_label",
-                  "is_case_admin", "department", "contact_number", "capabilities", "authorities"]
+                  "is_case_admin", "department", "contact_number", "capabilities", "authorities", "workspace"]
         read_only_fields = ["id", "username", "display_name", "first_name", "last_name", "email", "role",
-                            "role_label", "is_case_admin", "capabilities", "authorities"]
+                            "role_label", "is_case_admin", "capabilities", "authorities", "workspace"]
 
     def get_capabilities(self, user) -> list[str]:
         return user.capabilities()
@@ -118,9 +118,14 @@ class UserAdminSerializer(serializers.ModelSerializer):
             if attrs.get("is_active") is False:
                 raise serializers.ValidationError({"is_active": ["You cannot deactivate your own account."]})
         role = attrs.get("role", self.instance.role if self.instance else Role.STUDENT)
-        if attrs.get("authorities") and role not in AUTHORITY_MEMBER_ROLES:
+        authorities = attrs.get("authorities")
+        if authorities and role not in AUTHORITY_MEMBER_ROLES:
             raise serializers.ValidationError(
-                {"authority_ids": ["Only authority officers and administrators can belong to an authority."]}
+                {"authority_ids": ["Only resolving-department users can belong to a department."]}
+            )
+        if authorities and len(authorities) > 1:
+            raise serializers.ValidationError(
+                {"authority_ids": ["A department user belongs to exactly one department."]}
             )
         return attrs
 

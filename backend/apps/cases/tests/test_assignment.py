@@ -45,7 +45,7 @@ class TestRecommendation:
 class TestAssignment:
     def test_assign_records_history_and_override(self, student, admin_user, make_case, it_unit):
         case = make_case(student)
-        case = assignment.assign_case(case, actor=admin_user, authority=it_unit, internal_note="IT handles HVAC panels")
+        case = assignment.assign_case(case, actor=admin_user, authority=it_unit, internal_note="IT handles HVAC panels", message="Assigned by test.")
         a = CaseAssignment.objects.get(case=case)
         assert case.status == "assigned" and case.assigned_authority == it_unit
         assert a.is_current and a.is_override and a.recommended_authority.code == "maintenance"
@@ -53,37 +53,37 @@ class TestAssignment:
 
     def test_reassignment_preserves_history(self, student, admin_user, officer, make_case, maintenance, it_unit):
         case = make_case(student)
-        assignment.assign_case(case, actor=admin_user, authority=maintenance)
-        workflow.transition(case, CaseStatus.IN_PROGRESS, actor=officer)
-        case = assignment.assign_case(case, actor=admin_user, authority=it_unit)
+        assignment.assign_case(case, actor=admin_user, authority=maintenance, message="Assigned by test.")
+        workflow.transition(case, CaseStatus.IN_PROGRESS, actor=officer, reason="Status update recorded by test.")
+        case = assignment.assign_case(case, actor=admin_user, authority=it_unit, message="Assigned by test.")
         rows = list(CaseAssignment.objects.filter(case=case).order_by("created_at", "id"))
         assert [r.authority for r in rows] == [maintenance, it_unit]
         assert [r.is_current for r in rows] == [False, True]
         assert rows[0].ended_at is not None
         assert case.status == "assigned"  # new authority has not started yet
-        assert case.status_history.last().reason == "Reassigned to IT Unit."
+        assert case.status_history.last().reason == "Reassigned to IT Unit: Assigned by test."
 
     def test_same_authority_twice_rejected(self, student, admin_user, make_case, maintenance):
         case = make_case(student)
-        assignment.assign_case(case, actor=admin_user, authority=maintenance)
+        assignment.assign_case(case, actor=admin_user, authority=maintenance, message="Assigned by test.")
         with pytest.raises(ValidationFailed):
-            assignment.assign_case(case, actor=admin_user, authority=maintenance)
+            assignment.assign_case(case, actor=admin_user, authority=maintenance, message="Assigned by test.")
 
     def test_inactive_authority_rejected(self, student, admin_user, make_case, it_unit):
         it_unit.is_active = False
         it_unit.save()
         with pytest.raises(ValidationFailed):
-            assignment.assign_case(make_case(student), actor=admin_user, authority=it_unit)
+            assignment.assign_case(make_case(student), actor=admin_user, authority=it_unit, message="Assigned by test.")
 
     def test_cannot_assign_closed_case(self, student, admin_user, make_case, maintenance):
         case = make_case(student)
-        workflow.transition(case, CaseStatus.REJECTED, actor=admin_user, reason="Spam")
+        workflow.transition(case, CaseStatus.REJECTED, actor=admin_user, reason="Spam submission")
         with pytest.raises(InvalidTransition):
-            assignment.assign_case(case, actor=admin_user, authority=maintenance)
+            assignment.assign_case(case, actor=admin_user, authority=maintenance, message="Assigned by test.")
 
     def test_assign_api_validates_authority(self, api, admin_user, student, make_case):
         case = make_case(student)
-        res = api(admin_user).post(f"{BASE}{case.pk}/assign/", {"authority_id": 99999})
+        res = api(admin_user).post(f"{BASE}{case.pk}/assign/", {"authority_id": 99999, "message": "Assigned by test."})
         assert res.status_code == 400 and "authority_id" in res.data["error"]["details"]
 
     def test_reclassify_updates_priority_and_logs_internal_note(self, api, admin_user, student, make_case, it_category):

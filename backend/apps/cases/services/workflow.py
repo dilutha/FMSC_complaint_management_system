@@ -74,6 +74,12 @@ REASON_REQUIRED = {
     S.WAITING_FOR_INFORMATION: "Describe the information that is needed.",
 }
 MIN_RESOLUTION_NOTE = 10
+#: Every status change made by staff (case administrators or the assigned
+#: department) must carry an explanatory message, saved atomically with the
+#: change in CaseStatusHistory.reason. Marking a case solved uses its resolution
+#: note as that message. Submitter actions and the scheduled job keep their own rules.
+MIN_STAFF_MESSAGE = 5
+STAFF_MESSAGE_REQUIRED = "Explain this status change. The message is saved with it and shown in the case history."
 
 
 def allowed_transitions(case: Case, user) -> list:
@@ -108,7 +114,13 @@ def _submitter_can_reopen(case: Case) -> bool:
 
 def write_history(case, from_status, to_status, actor, reason=""):
     return CaseStatusHistory.objects.create(
-        case=case, from_status=from_status or "", to_status=to_status, changed_by=actor, reason=reason or ""
+        case=case,
+        from_status=from_status or "",
+        to_status=to_status,
+        changed_by=actor,
+        reason=reason or "",
+        actor_role=getattr(actor, "role", "") or "",
+        actor_authority=access.acting_authority(actor, case) if actor is not None else None,
     )
 
 
@@ -140,6 +152,12 @@ def transition(case: Case, to_status, *, actor, reason="", resolution_note=""):
 
         if to_status in REASON_REQUIRED and not reason:
             raise ValidationFailed(REASON_REQUIRED[to_status], details={"reason": ["This field is required."]})
+        staff_change = actor is not None and SUBMITTER not in capacities
+        if staff_change and to_status != S.SOLVED and len(reason) < MIN_STAFF_MESSAGE:
+            raise ValidationFailed(
+                STAFF_MESSAGE_REQUIRED,
+                details={"reason": [f"Enter a message of at least {MIN_STAFF_MESSAGE} characters."]},
+            )
         if to_status == S.SOLVED and len(resolution_note) < MIN_RESOLUTION_NOTE:
             raise ValidationFailed(
                 f"A resolution note of at least {MIN_RESOLUTION_NOTE} characters is required.",

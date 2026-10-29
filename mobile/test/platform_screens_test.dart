@@ -10,6 +10,7 @@ import 'package:fmsc_cases/features/cases/data/models.dart';
 import 'package:fmsc_cases/features/cases/presentation/case_detail_screen.dart';
 import 'package:fmsc_cases/features/dashboard/data/dashboard.dart';
 import 'package:fmsc_cases/features/dashboard/presentation/dashboard_screen.dart';
+import 'package:fmsc_cases/features/home/home_page.dart';
 import 'package:fmsc_cases/features/notifications/data/notifications.dart';
 import 'package:fmsc_cases/features/notifications/presentation/notifications_screen.dart';
 import 'package:fmsc_cases/features/suggestions/data/suggestions.dart';
@@ -83,8 +84,9 @@ void main() {
       expect(h.session.isSignedIn, isFalse);
     });
 
-    testWidgets('successful sign-in opens the role-based shell', (tester) async {
-      final h = PlatformHarness()..auth.signInResult = (token: 'tok', user: managementUser);
+    testWidgets('home page Login opens sign-in, then the role dashboard', (tester) async {
+      final h = PlatformHarness()..auth.signInResult = (token: 'tok', user: userFromFixture('case_admin'));
+      h.dashboard.overviewWorkspace = 'case_admin';
       h.session.restore(() async => throw apiError(401, 'no token'));
       await tester.pumpWidget(FmscApp(
         session: h.session,
@@ -94,14 +96,21 @@ void main() {
         dashboard: h.dashboard,
         suggestions: h.suggestions,
         admin: h.admin,
+        staffCases: h.staffCases,
         pickAttachments: ({required List<String> allowedExtensions}) async => const [],
       ));
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextFormField).at(0), 'manager');
-      await tester.enterText(find.byType(TextFormField).at(1), 'Synthetic-pass-123');
-      await tester.tap(find.text('Sign in'));
+      expect(find.byType(HomePage), findsOneWidget); // public page, no sign-in needed
+      await tester.tap(find.text('Login to Get Started'));
+      await tester.pumpAndSettle();
+      expect(find.byType(LoginScreen), findsOneWidget);
+      await tester.enterText(find.byType(TextFormField).at(0), 'demo_case_admin');
+      await tester.enterText(find.byType(TextFormField).at(1), 'Password@123');
+      await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
       await tester.pumpAndSettle();
       expect(find.byType(AppShell), findsOneWidget);
+      expect(find.byType(LoginScreen), findsNothing); // sign-in route closed
+      expect(find.text('Case administrator dashboard'), findsOneWidget);
       expect(h.store.value, 'tok');
     });
   });
@@ -173,12 +182,19 @@ void main() {
       ];
     }
 
-    testWidgets('students see only their own areas', (tester) async {
-      expect(await labels(tester, studentUser), ['Cases', 'Alerts', 'Profile']);
+    testWidgets('complainers get their dashboard and own cases only', (tester) async {
+      expect(await labels(tester, userFromFixture('complainer')), ['Dashboard', 'My cases', 'Alerts', 'Profile']);
     });
 
-    testWidgets('management sees the dashboard', (tester) async {
-      expect(await labels(tester, managementUser), ['Cases', 'Dashboard', 'Suggestions', 'Alerts', 'Profile']);
+    testWidgets('admins get faculty-wide cases and reports', (tester) async {
+      expect(await labels(tester, userFromFixture('admin')), ['Dashboard', 'Cases', 'Reports', 'Alerts', 'Profile']);
+    });
+
+    testWidgets('case administrators and departments get cases and suggestions', (tester) async {
+      expect(await labels(tester, userFromFixture('case_admin')),
+          ['Dashboard', 'Cases', 'Suggestions', 'Alerts', 'Profile']);
+      expect(await labels(tester, userFromFixture('department')),
+          ['Dashboard', 'Cases', 'Suggestions', 'Alerts', 'Profile']);
     });
 
     testWidgets('unread badge shows the count', (tester) async {

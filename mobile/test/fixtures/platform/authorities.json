@@ -1,0 +1,42 @@
+[
+  {
+    "id": 4,
+    "name": "Dean's Office",
+    "code": "deans-office",
+    "unit": "",
+    "officer_name": "",
+    "designation": "",
+    "email": "",
+    "phone": ""
+  },
+  {
+    "id": 3,
+    "name": "Examination Unit",
+    "code": "examination-unit",
+    "unit": "",
+    "officer_name": "",
+    "designation": "",
+    "email": "",
+    "phone": ""
+  },
+  {
+    "id": 1,
+    "name": "IT Department",
+    "code": "it-unit",
+    "unit": "",
+    "officer_name": "",
+    "designation": "",
+    "email": "",
+    "phone": ""
+  },
+  {
+    "id": 2,
+    "name": "Maintenance Department",
+    "code": "maintenance",
+    "unit": "",
+    "officer_name": "",
+    "designation": "",
+    "email": "",
+    "phone": ""
+  }
+]

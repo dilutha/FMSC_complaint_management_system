@@ -33,7 +33,7 @@ class TestDuplicateDetection:
 
     def test_rejected_and_out_of_window_cases_excluded(self, student, admin_user, make_case, settings):
         rejected = make_case(student)
-        workflow.transition(rejected, CaseStatus.REJECTED, actor=admin_user, reason="Spam")
+        workflow.transition(rejected, CaseStatus.REJECTED, actor=admin_user, reason="Spam submission")
         old = make_case(student)
         Case.objects.filter(pk=old.pk).update(
             created_at=timezone.now() - timedelta(days=settings.FMSC_CASES["DUPLICATE_WINDOW_DAYS"] + 5)

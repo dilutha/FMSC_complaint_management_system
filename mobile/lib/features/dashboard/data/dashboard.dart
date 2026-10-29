@@ -1,5 +1,6 @@
 import '../../../core/api_client.dart';
 import '../../cases/data/models.dart' show PageResult;
+import 'overview.dart';
 
 /// Dashboard filters (all optional). Mirrors the backend query parameters.
 class DashboardFilters {
@@ -259,6 +260,8 @@ class Trends {
 }
 
 abstract class DashboardRepository {
+  /// Role-scoped dashboard for any signed-in user.
+  Future<DashboardOverview> overview();
   Future<DashboardSummary> summary(DashboardFilters f);
   Future<Workload> workload(DashboardFilters f);
   Future<Ageing> ageing(DashboardFilters f);
@@ -272,6 +275,10 @@ class ApiDashboardRepository implements DashboardRepository {
 
   Future<Map<String, dynamic>> _get(String path, DashboardFilters f, [Map<String, String> extra = const {}]) async =>
       await _api.get(path, query: {...f.toQuery(), ...extra}) as Map<String, dynamic>;
+
+  @override
+  Future<DashboardOverview> overview() async =>
+      DashboardOverview.fromJson(await _api.get('dashboard/overview/') as Map<String, dynamic>);
 
   @override
   Future<DashboardSummary> summary(DashboardFilters f) async =>

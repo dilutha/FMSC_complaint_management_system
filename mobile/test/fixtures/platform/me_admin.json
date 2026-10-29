@@ -1,0 +1,22 @@
+{
+  "id": 4,
+  "username": "demo_system_admin",
+  "display_name": "Demo Admin",
+  "first_name": "Demo",
+  "last_name": "Admin",
+  "email": "demo_system_admin@example.com",
+  "role": "system_admin",
+  "role_label": "Admin",
+  "is_case_admin": false,
+  "department": "Faculty Office",
+  "contact_number": "",
+  "capabilities": [
+    "manage_authorities",
+    "manage_users",
+    "post_admin_messages",
+    "view_audit_log",
+    "view_dashboard"
+  ],
+  "authorities": [],
+  "workspace": "admin"
+}

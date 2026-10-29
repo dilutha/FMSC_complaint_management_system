@@ -1,0 +1,18 @@
+{
+  "id": 1,
+  "username": "demo_student",
+  "display_name": "Demo Student",
+  "first_name": "Demo",
+  "last_name": "Student",
+  "email": "demo_student@example.com",
+  "role": "student",
+  "role_label": "Student",
+  "is_case_admin": false,
+  "department": "Department of Accounting",
+  "contact_number": "",
+  "capabilities": [
+    "submit_cases"
+  ],
+  "authorities": [],
+  "workspace": "complainer"
+}

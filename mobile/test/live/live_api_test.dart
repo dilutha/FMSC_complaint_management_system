@@ -13,6 +13,8 @@ import 'package:fmsc_cases/features/auth/data/platform_auth_session.dart';
 import 'package:fmsc_cases/features/auth/data/token_store.dart';
 import 'package:fmsc_cases/features/cases/data/case_repository.dart';
 import 'package:fmsc_cases/features/dashboard/data/dashboard.dart';
+import 'package:fmsc_cases/features/dashboard/data/overview.dart';
+import 'package:fmsc_cases/features/staff/data/staff_cases.dart';
 import 'package:fmsc_cases/features/notifications/data/notifications.dart';
 import 'package:fmsc_cases/features/suggestions/data/suggestions.dart';
 
@@ -37,14 +39,18 @@ void main() {
   final skip = baseUrl.isEmpty ? 'Set --dart-define=LIVE_API_BASE_URL to run against a server' : null;
 
   group('live API', skip: skip, () {
+    // username: (role, workspace the app lands on)
     const roles = {
-      'demo_student': 'student',
-      'demo_lecturer': 'lecturer',
-      'demo_authority': 'authority',
-      'demo_it_officer': 'authority',
-      'demo_case_admin': 'case_admin',
-      'demo_management': 'management',
-      'demo_system_admin': 'system_admin',
+      'demo_student': ('student', 'complainer'),
+      'demo_lecturer': ('lecturer', 'complainer'),
+      'demo_non_academic': ('non_academic_staff', 'complainer'),
+      'demo_system_admin': ('system_admin', 'admin'),
+      'demo_case_admin': ('case_admin', 'case_admin'),
+      'demo_it': ('authority', 'department'),
+      'demo_maintenance': ('authority', 'department'),
+      'demo_exams': ('authority', 'department'),
+      'demo_deans_office': ('authority', 'department'),
+      'demo_management': ('management', 'management'),
     };
 
     for (final entry in roles.entries) {
@@ -53,12 +59,23 @@ void main() {
         final auth = ApiAuthRepository(c.api);
         late ({String token, dynamic user}) result;
         await timed('${entry.key} sign-in', () async => result = await auth.signIn(entry.key, password));
-        expect(result.user.role, entry.value);
+        expect(result.user.role, entry.value.$1);
+        expect(result.user.workspace, entry.value.$2);
         await c.session.signIn(token: result.token, user: result.user);
 
         final me = await auth.me();
         expect(me.username, entry.key);
         await timed('${entry.key} my cases', () => ApiCaseRepository(c.api).listMyCases());
+        final dashboard0 = ApiDashboardRepository(c.api);
+        late DashboardOverview overview;
+        await timed('${entry.key} role dashboard', () async => overview = await dashboard0.overview());
+        expect(overview.workspace, entry.value.$2);
+        final listed = await ApiStaffCaseRepository(c.api).list(const StaffCaseFilter());
+        expect(overview.count('total'), listed.count, reason: 'dashboard counts must match the visible case list');
+        if (entry.value.$2 == 'department') {
+          expect(listed.items.every((r) => r.department == overview.departments.single), isTrue,
+              reason: 'a department sees only its own cases');
+        }
         await timed('${entry.key} notifications', () => ApiNotificationRepository(c.api).list());
 
         final dashboard = ApiDashboardRepository(c.api);

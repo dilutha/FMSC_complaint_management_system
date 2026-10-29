@@ -1,0 +1,56 @@
+{
+  "id": 1,
+  "case_number": "FMSC-2026-00001",
+  "title": "Wi-Fi keeps dropping in Computer Lab 2",
+  "case_type": "complaint",
+  "category": {
+    "id": 2,
+    "name": "IT",
+    "code": "it",
+    "description": ""
+  },
+  "priority": "normal",
+  "status": "submitted",
+  "status_label": "Submitted",
+  "location": "Computer Lab 2",
+  "assigned_authority": null,
+  "created_at": "2026-10-30T00:42:28.702785+05:30",
+  "updated_at": "2026-10-30T00:42:28.702793+05:30",
+  "deadline_at": null,
+  "is_overdue": false,
+  "age_days": 0,
+  "submitter_role": "student",
+  "submitter_role_label": "Student",
+  "description": "The Wi-Fi connection drops every few minutes during practical sessions in Computer Lab 2.",
+  "requested_priority": "normal",
+  "submitted_by": {
+    "id": 1,
+    "display_name": "Demo Student",
+    "role": "student"
+  },
+  "solved_at": null,
+  "closed_at": null,
+  "verification_due_at": null,
+  "reopen_count": 0,
+  "attachments": [],
+  "latest_resolution": null,
+  "allowed_actions": {
+    "transitions": [
+      "under_review",
+      "rejected",
+      "assigned"
+    ],
+    "can_assign": true,
+    "can_verify_resolution": false,
+    "can_reopen": false,
+    "can_comment": true,
+    "can_post_admin_message": false,
+    "can_add_internal_note": true,
+    "can_change_deadline": true,
+    "can_reclassify": true,
+    "can_view_duplicates": true
+  },
+  "viewer_capacities": [
+    "admin"
+  ]
+}

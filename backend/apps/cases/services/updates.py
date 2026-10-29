@@ -5,7 +5,7 @@ from apps.cases import signals
 from apps.cases.models import TERMINAL_STATUSES, AttachmentKind, Case, CaseStatus, CaseUpdate, UpdateKind
 
 from . import access
-from .access import ADMIN, AUTHORITY, SUBMITTER
+from .access import ADMIN, AUTHORITY, MONITOR, SUBMITTER
 from .attachments import save_attachments
 from .events import emit
 from .exceptions import InvalidTransition, NotPermitted, ValidationFailed
@@ -31,10 +31,20 @@ def _add_update_locked(case, *, actor, body, kind, is_internal, new_status, reso
     kinds = access.actor_kinds(actor, case)
     body = (body or "").strip()
     is_staff = bool(kinds & {ADMIN, AUTHORITY})
+    is_monitor = MONITOR in kinds and not kinds & {ADMIN, AUTHORITY, SUBMITTER}
 
-    if not kinds & {ADMIN, AUTHORITY, SUBMITTER}:
+    if not kinds & {ADMIN, AUTHORITY, SUBMITTER, MONITOR}:
         raise NotPermitted("You cannot add updates to this case.")
-    if is_staff:
+    if is_monitor:
+        # Admins monitor: they may post messages, but never change status or add files.
+        if new_status:
+            raise NotPermitted("Admins can add messages but cannot change a case's status.")
+        if attachments:
+            raise NotPermitted("Admins cannot attach files to a case.")
+        if not body:
+            raise ValidationFailed("Please enter a message.", details={"body": ["This field is required."]})
+        kind = UpdateKind.ADMIN_MESSAGE
+    elif is_staff:
         if kind not in STAFF_KINDS:
             raise ValidationFailed("Unsupported update type.", details={"kind": ["Invalid for staff."]})
     else:

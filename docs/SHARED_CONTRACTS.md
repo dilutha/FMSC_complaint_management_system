@@ -5,7 +5,25 @@ Member A wrote the original version of this file before Member B's code existed,
 - the decisions Member B took where Member A asked a question (**Member A to confirm**);
 - what Member B asks of Member A.
 
-## 1. User model and roles: contract (unchanged)
+## 0. Changes made for the four user groups (October 2026), Member A to review
+
+The faculty specification defines four groups: complainers, admins, case administrators and resolving departments. Implementing them changed some shared meanings:
+
+| Item | Before | Now |
+|---|---|---|
+| Roles | 6 roles | Adds `non_academic_staff`. New labels: `system_admin` → "Admin", `case_admin` → "Case Administrator", `authority` → "Resolving Department". No values were renamed. |
+| `is_case_admin` | superuser, `case_admin` or `system_admin` | superuser or `case_admin` only. Admins monitor; they do not run the workflow. |
+| `is_management_viewer` | `management` | `management` or `system_admin` (read every case) |
+| `can_submit_cases` | any active user | active students, lecturers and non-academic staff only |
+| Department visibility | assigned cases plus the user's own submissions | assigned cases only |
+| Staff status change | message required only for rejection, reopening and information requests | always required (at least 5 characters, saved atomically with the change) |
+| `assign_case` | `internal_note` optional | `message` required (shown in the history); `internal_note` optional |
+| `CaseUpdate` / `CaseStatusHistory` | no role or department recorded | role and department snapshots (migration `cases.0002`, additive only); new kind `admin_message` |
+| Seed departments | 5, including "Department Office" | the 4 required departments (`it-unit` "IT Department", `maintenance` "Maintenance Department", `examination-unit`, `deans-office`). Codes are unchanged; existing rows are kept. |
+
+About 110 call sites in the case module's tests were updated so that they pass the now-mandatory messages. The tests that check a *missing* reason is rejected are unchanged.
+
+## 1. User model and roles: contract
 
 `accounts.User` and the role values `student`, `lecturer`, `case_admin`, `authority`, `management` and `system_admin` are unchanged. **No migration changes the shared user table.**
 

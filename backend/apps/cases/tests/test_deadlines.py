@@ -99,7 +99,7 @@ class TestOverdueAndEscalation:
 
     def test_escalation_is_idempotent(self, student, admin_user, maintenance, make_case, django_capture_on_commit_callbacks):
         case = make_case(student)
-        assignment.assign_case(case, actor=admin_user, authority=maintenance)
+        assignment.assign_case(case, actor=admin_user, authority=maintenance, message="Assigned by test.")
         self._overdue(case, 2)
         seen = []
         handler = lambda sender, case, actor, payload, **kw: seen.append(payload["level"])  # noqa: E731
@@ -138,7 +138,7 @@ class TestOverdueAndEscalation:
 class TestAutoClose:
     def test_solved_case_auto_closes_after_window(self, student, admin_user, officer, maintenance, make_case):
         case = make_case(student)
-        assignment.assign_case(case, actor=admin_user, authority=maintenance)
+        assignment.assign_case(case, actor=admin_user, authority=maintenance, message="Assigned by test.")
         workflow.transition(case, CaseStatus.SOLVED, actor=officer, resolution_note="Fixed the leak completely.")
         assert deadlines.process_deadlines()["auto_closed"] == 0
         Case.objects.filter(pk=case.pk).update(verification_due_at=timezone.now() - timedelta(minutes=1))
@@ -152,7 +152,7 @@ class TestAutoClose:
         DeadlinePolicy.objects.create(name="Normal", priority="normal", resolution_hours=72)
         case = make_case(student)
         original = case.deadline_at
-        assignment.assign_case(case, actor=admin_user, authority=maintenance)
+        assignment.assign_case(case, actor=admin_user, authority=maintenance, message="Assigned by test.")
         workflow.transition(case, CaseStatus.SOLVED, actor=officer, resolution_note="Fixed the leak completely.")
         case = workflow.transition(case, CaseStatus.REOPENED, actor=student, reason="Leak is back")
         assert case.deadline_at >= original

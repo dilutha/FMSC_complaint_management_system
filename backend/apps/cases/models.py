@@ -230,6 +230,13 @@ class CaseStatusHistory(models.Model):
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, help_text="Empty for system actions."
     )
     reason = models.TextField(blank=True)
+    # Snapshots of who acted, so history stays accurate if the user's role or
+    # department changes later (Member B: role-based message history).
+    actor_role = models.CharField(max_length=20, blank=True)
+    actor_authority = models.ForeignKey(
+        "Authority", null=True, blank=True, on_delete=models.SET_NULL, related_name="+",
+        help_text="Department the actor acted for, when acting as a resolving department.",
+    )
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
 
     class Meta:
@@ -268,6 +275,7 @@ class UpdateKind(models.TextChoices):
     INFORMATION_RESPONSE = "information_response", "Information provided"
     RESOLUTION = "resolution", "Resolution note"
     VERIFICATION = "verification", "Resolution verification"
+    ADMIN_MESSAGE = "admin_message", "Admin message"
 
 
 class CaseUpdate(models.Model):
@@ -276,10 +284,30 @@ class CaseUpdate(models.Model):
     kind = models.CharField(max_length=30, choices=UpdateKind.choices, default=UpdateKind.COMMENT)
     body = models.TextField(max_length=5000)
     is_internal = models.BooleanField(default=False, help_text="Visible to staff only, never to the submitter.")
+    author_role = models.CharField(max_length=20, blank=True)
+    author_authority = models.ForeignKey(
+        Authority, null=True, blank=True, on_delete=models.SET_NULL, related_name="+",
+        help_text="Department the author wrote for, when writing as a resolving department.",
+    )
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
 
     class Meta:
         ordering = ["created_at", "id"]
+
+    def save(self, *args, **kwargs):
+        if self._state.adding:
+            _stamp_author(self)
+        super().save(*args, **kwargs)
+
+
+def _stamp_author(update):
+    """Record the author's role and acting department on new updates (all creation paths)."""
+    if update.author_id and not update.author_role:
+        update.author_role = getattr(update.author, "role", "") or ""
+    if update.author_id and update.author_authority_id is None and update.case_id:
+        authority = update.case.assigned_authority
+        if authority and authority.members.filter(pk=update.author_id).exists():
+            update.author_authority = authority
 
 
 class ResolutionOutcome(models.TextChoices):

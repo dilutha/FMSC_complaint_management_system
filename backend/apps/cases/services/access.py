@@ -7,6 +7,7 @@ ADMIN = "admin"
 AUTHORITY = "authority"
 SUBMITTER = "submitter"
 MANAGEMENT = "management"
+MONITOR = "monitor"  # admins: read everything and post messages; no workflow changes
 SYSTEM = "system"
 
 
@@ -33,7 +34,14 @@ def actor_kinds(user, case: Case) -> set:
         kinds.add(SUBMITTER)
     if getattr(user, "is_management_viewer", False):
         kinds.add(MANAGEMENT)
+    if getattr(user, "can_post_admin_messages", False):
+        kinds.add(MONITOR)
     return kinds
+
+
+def acting_authority(user, case: Case):
+    """The department `user` acts for on `case` (only as the assigned department's member)."""
+    return case.assigned_authority if is_assigned_member(user, case) else None
 
 
 def is_staff_for(user, case: Case) -> bool:
@@ -48,6 +56,10 @@ def visible_cases(user):
         return qs.none()
     if user.is_case_admin or user.is_management_viewer:
         return qs
+    if getattr(user, "is_authority_officer", False):
+        # Resolving departments see only cases assigned to their own department
+        # (not even legacy cases they submitted before departments stopped submitting).
+        return qs.filter(assigned_authority__members=user, assigned_authority__is_active=True).distinct()
     return qs.filter(
         Q(submitted_by=user)
         | Q(assigned_authority__members=user, assigned_authority__is_active=True)

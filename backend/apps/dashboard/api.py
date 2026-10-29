@@ -16,6 +16,7 @@ from apps.audit.services import record as audit
 from apps.cases.models import CaseStatus, CaseType, Priority
 
 from . import metrics
+from .overview import overview
 
 
 class DashboardFilterSerializer(serializers.Serializer):
@@ -64,6 +65,14 @@ FILTER_PARAMETERS = [
     OpenApiParameter("authority", int, description="Responsible unit (authority id)"),
     OpenApiParameter("location", str, description="Text contained in the location"),
 ]
+
+
+class DashboardOverviewView(APIView):
+    """Role-scoped dashboard for every signed-in user (see overview.py for the scopes)."""
+
+    @extend_schema(responses=OpenApiTypes.OBJECT)
+    def get(self, request):
+        return Response(overview(request.user))
 
 
 class _DashboardView(APIView):

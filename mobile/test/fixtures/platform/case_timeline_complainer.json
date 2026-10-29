@@ -1,0 +1,77 @@
+[
+  {
+    "type": "status_change",
+    "at": "2026-10-29 19:12:28.743185+00:00",
+    "title": "Submitted",
+    "body": "Case submitted.",
+    "from_status": null,
+    "to_status": "submitted",
+    "actor": {
+      "id": 2,
+      "name": "You",
+      "role": "Lecturer",
+      "department": null
+    },
+    "is_internal": false
+  },
+  {
+    "type": "status_change",
+    "at": "2026-10-29 19:12:28.748240+00:00",
+    "title": "Assigned",
+    "body": "Assigned to IT Department: Software licences are managed by the IT Department.",
+    "from_status": "submitted",
+    "to_status": "assigned",
+    "actor": {
+      "id": null,
+      "name": "Case Administrator",
+      "role": "Case Administrator",
+      "department": null
+    },
+    "is_internal": false
+  },
+  {
+    "type": "status_change",
+    "at": "2026-10-29 19:12:28.752945+00:00",
+    "title": "In Progress",
+    "body": "The IT Department has contacted the vendor about renewal.",
+    "from_status": "assigned",
+    "to_status": "in_progress",
+    "actor": {
+      "id": null,
+      "name": "IT Department",
+      "role": "Resolving Department",
+      "department": "IT Department"
+    },
+    "is_internal": false
+  },
+  {
+    "type": "update",
+    "at": "2026-10-29 19:12:28.757349+00:00",
+    "title": "Resolution note",
+    "body": "The licences were renewed and the software was reactivated on all lab computers.",
+    "kind": "resolution",
+    "actor": {
+      "id": null,
+      "name": "IT Department",
+      "role": "Resolving Department",
+      "department": "IT Department"
+    },
+    "is_internal": false,
+    "attachment_ids": []
+  },
+  {
+    "type": "status_change",
+    "at": "2026-10-29 19:12:28.759706+00:00",
+    "title": "Solved – Awaiting Verification",
+    "body": "The licences were renewed and the software was reactivated on all lab computers.",
+    "from_status": "in_progress",
+    "to_status": "solved",
+    "actor": {
+      "id": null,
+      "name": "IT Department",
+      "role": "Resolving Department",
+      "department": "IT Department"
+    },
+    "is_internal": false
+  }
+]

@@ -11,7 +11,7 @@ from apps.cases.models import AssignmentRule, Authority, Case, CaseAssignment, C
 from . import access
 from .events import emit
 from .exceptions import InvalidTransition, NotPermitted, ValidationFailed
-from .workflow import ASSIGNABLE_FROM, write_history
+from .workflow import ASSIGNABLE_FROM, MIN_STAFF_MESSAGE, write_history
 
 
 @dataclass
@@ -45,9 +45,18 @@ def recommend_authority(case: Case) -> Recommendation:
     return Recommendation(None, "No routing rule matches; choose an authority manually.")
 
 
-def assign_case(case: Case, *, actor, authority: Authority, internal_note: str = "") -> Case:
+def assign_case(case: Case, *, actor, authority: Authority, message: str = "", internal_note: str = "") -> Case:
+    """Assign or reassign `case`. `message` (required) explains the decision and is
+    shown in the case history to everyone who can see the case; `internal_note`
+    is for staff only."""
     if not access.is_case_admin(actor):
-        raise NotPermitted("Only administrators can assign cases.")
+        raise NotPermitted("Only case administrators can assign cases.")
+    message = (message or "").strip()
+    if len(message) < MIN_STAFF_MESSAGE:
+        raise ValidationFailed(
+            "Explain why the case is assigned to this department.",
+            details={"message": [f"Enter a message of at least {MIN_STAFF_MESSAGE} characters."]},
+        )
     if not authority.is_active:
         raise ValidationFailed("This authority is inactive.", details={"authority_id": ["Inactive authority."]})
 
@@ -82,7 +91,7 @@ def assign_case(case: Case, *, actor, authority: Authority, internal_note: str =
             from_status,
             CaseStatus.ASSIGNED,
             actor,
-            f"{'Reassigned' if is_reassignment else 'Assigned'} to {authority.name}.",
+            f"{'Reassigned' if is_reassignment else 'Assigned'} to {authority.name}: {message}",
         )
 
         emit(

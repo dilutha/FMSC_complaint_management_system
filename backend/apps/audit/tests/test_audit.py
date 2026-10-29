@@ -26,9 +26,9 @@ class TestCaseWorkflowAudit:
         with run_events():
             case = make_case(student)
         with run_events():
-            workflow.transition(case, "under_review", actor=admin_user)
+            workflow.transition(case, "under_review", actor=admin_user, reason="Status update recorded by test.")
         with run_events():
-            assignment.assign_case(case, actor=admin_user, authority=maintenance, internal_note="Internal routing note")
+            assignment.assign_case(case, actor=admin_user, authority=maintenance, internal_note="Internal routing note", message="Assigned by test.")
         assert actions_for(case) == ["case.submitted", "case.status_changed", "case.assigned", "case.status_changed"]
 
         assigned = AuditEvent.objects.get(action="case.assigned")
@@ -78,7 +78,7 @@ class TestCaseWorkflowAudit:
     def test_redelivered_signal_does_not_duplicate(self, student, admin_user, make_case, run_events):
         case = make_case(student)
         with run_events():
-            workflow.transition(case, "under_review", actor=admin_user)
+            workflow.transition(case, "under_review", actor=admin_user, reason="Status update recorded by test.")
         payload = {"from_status": "submitted", "to_status": "under_review", "reason": ""}
         signals.case_status_changed.send(sender=Case, case=case, actor=admin_user, payload=payload)
         assert AuditEvent.objects.filter(action="case.status_changed").count() == 1
@@ -146,7 +146,7 @@ class TestAuditApi:
     def test_system_admin_can_list_and_filter(self, api, system_admin, student, admin_user, make_case, run_events):
         with run_events():
             case = make_case(student)
-            workflow.transition(case, "under_review", actor=admin_user)
+            workflow.transition(case, "under_review", actor=admin_user, reason="Status update recorded by test.")
         res = api(system_admin).get(AUDIT, {"entity_type": "case", "entity_id": case.pk, "action": "case.submitted"})
         assert res.status_code == 200 and res.data["count"] == 1
         assert api(system_admin).get(AUDIT, {"actor": admin_user.pk}).data["count"] >= 1

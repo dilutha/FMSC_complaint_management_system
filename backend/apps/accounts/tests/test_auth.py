@@ -112,13 +112,14 @@ class TestProfile:
 @pytest.mark.django_db
 class TestCapabilities:
     @pytest.mark.parametrize("role,expected", [
-        (Role.STUDENT, []),
-        (Role.LECTURER, []),
+        (Role.STUDENT, ["submit_cases"]),
+        (Role.LECTURER, ["submit_cases"]),
+        (Role.NON_ACADEMIC_STAFF, ["submit_cases"]),
         (Role.AUTHORITY, ["handle_assigned_cases"]),
         (Role.MANAGEMENT, ["view_dashboard"]),
-        (Role.CASE_ADMIN, ["evaluate_suggestions", "handle_assigned_cases", "manage_authorities", "view_dashboard"]),
-        (Role.SYSTEM_ADMIN, ["evaluate_suggestions", "handle_assigned_cases", "manage_authorities", "manage_users",
-                             "view_audit_log", "view_dashboard"]),
+        (Role.CASE_ADMIN, ["evaluate_suggestions", "review_cases", "view_dashboard"]),
+        (Role.SYSTEM_ADMIN, ["manage_authorities", "manage_users", "post_admin_messages", "view_audit_log",
+                             "view_dashboard"]),
     ])
     def test_role_capabilities(self, role, expected):
         assert make_user(role).capabilities() == expected
