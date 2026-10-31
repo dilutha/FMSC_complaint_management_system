@@ -132,6 +132,13 @@ class _FmscAppState extends State<FmscApp> {
                   onLogin: () => Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const LoginScreen(), settings: const RouteSettings(name: 'login')),
                   ),
+                  // Demo list: opens the same sign-in screen with the account pre-filled.
+                  onDemoLogin: (username, password) => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => LoginScreen(initialUsername: username, initialPassword: password),
+                      settings: const RouteSettings(name: 'login'),
+                    ),
+                  ),
                 ),
               ),
             },

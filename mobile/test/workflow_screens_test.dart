@@ -4,7 +4,11 @@ import 'package:fmsc_cases/features/cases/data/models.dart';
 import 'package:fmsc_cases/features/cases/presentation/case_detail_screen.dart';
 import 'package:fmsc_cases/features/cases/presentation/submit_case_screen.dart';
 import 'package:fmsc_cases/features/dashboard/presentation/role_dashboard_screen.dart';
+import 'package:fmsc_cases/features/auth/presentation/login_screen.dart';
+import 'package:fmsc_cases/features/home/demo_accounts.dart';
 import 'package:fmsc_cases/features/home/home_page.dart';
+import 'package:fmsc_cases/main.dart';
+import 'package:fmsc_cases/platform/app_shell.dart';
 import 'package:fmsc_cases/features/staff/presentation/staff_cases_screen.dart';
 
 import 'platform_fakes.dart';
@@ -14,6 +18,12 @@ Future<void> bigScreen(WidgetTester tester, {Size size = const Size(1280, 2400)}
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
 }
+
+/// The "Sign in as this user" button on the demo card for [username].
+Finder demoSignIn(String username) => find.descendant(
+  of: find.ancestor(of: find.text(username), matching: find.byType(Column)).first,
+  matching: find.text('Sign in as this user'),
+);
 
 void main() {
   group('Public home page', () {
@@ -38,7 +48,7 @@ void main() {
         expect(find.text(text), findsWidgets, reason: text);
       }
       for (final dept in ['IT Department', 'Maintenance Department', 'Examination Unit', "Dean's Office"]) {
-        expect(find.text(dept), findsOneWidget);
+        expect(find.text(dept), findsWidgets); // department card (and demo account card in debug builds)
       }
       for (final group in ['Complainers', 'Admins', 'Case Administrators', 'Resolving Departments']) {
         expect(find.text(group), findsWidgets);
@@ -111,6 +121,75 @@ void main() {
       await tester.pump();
       final opacity = tester.widgetList<AnimatedOpacity>(find.byType(AnimatedOpacity)).first;
       expect(opacity.opacity, 1);
+    });
+  });
+
+  group('Demo accounts on the home page', () {
+    testWidgets('lists every demo user with the shared password', (tester) async {
+      await bigScreen(tester, size: const Size(1280, 4000));
+      await tester.pumpWidget(MaterialApp(home: HomePage(onLogin: () {}, showDemoAccounts: true)));
+      await tester.pumpAndSettle();
+      expect(find.text('Try the System with Demo Accounts'), findsOneWidget);
+      for (final a in demoAccounts) {
+        expect(find.text(a.username), findsOneWidget, reason: a.username);
+      }
+      expect(demoAccounts.map((a) => a.username).toSet(), {
+        'demo_student', 'demo_lecturer', 'demo_non_academic', 'demo_system_admin', 'demo_case_admin',
+        'demo_it', 'demo_maintenance', 'demo_exams', 'demo_deans_office', 'demo_management',
+      });
+      expect(find.text(demoPassword), findsOneWidget);
+      expect(find.textContaining('Never use this password for a real account'), findsOneWidget);
+    });
+
+    testWidgets('"Sign in as this user" passes the account to sign-in', (tester) async {
+      await bigScreen(tester, size: const Size(1280, 4000));
+      String? user;
+      String? pass;
+      await tester.pumpWidget(MaterialApp(
+        home: HomePage(onLogin: () {}, showDemoAccounts: true, onDemoLogin: (u, p) {
+          user = u;
+          pass = p;
+        }),
+      ));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(demoSignIn('demo_case_admin'));
+      await tester.tap(demoSignIn('demo_case_admin'));
+      expect((user, pass), ('demo_case_admin', 'Password@123'));
+    });
+
+    testWidgets('hidden when disabled and for signed-in users', (tester) async {
+      await bigScreen(tester, size: const Size(1440, 4000));
+      await tester.pumpWidget(MaterialApp(home: HomePage(onLogin: () {}, showDemoAccounts: false)));
+      await tester.pumpAndSettle();
+      expect(find.text('Try the System with Demo Accounts'), findsNothing);
+      expect(find.text(demoPassword), findsNothing);
+      expect(find.text('Demo Accounts'), findsNothing); // no nav link either
+      await tester.pumpWidget(MaterialApp(home: HomePage(onLogin: () {}, onDashboard: () {}, showDemoAccounts: true)));
+      await tester.pumpAndSettle();
+      expect(find.text(demoPassword), findsNothing);
+    });
+
+    testWidgets('full app: demo card pre-fills sign-in and lands on the dashboard', (tester) async {
+      await bigScreen(tester, size: const Size(1280, 5000));
+      final h = PlatformHarness()..auth.signInResult = (token: 'tok', user: userFromFixture('complainer'));
+      h.session.restore(() async => throw apiError(401, 'no token'));
+      await tester.pumpWidget(FmscApp(
+        session: h.session, auth: h.auth, caseRepository: h.cases, notifications: h.notifications,
+        dashboard: h.dashboard, suggestions: h.suggestions, admin: h.admin, staffCases: h.staffCases,
+        pickAttachments: ({required List<String> allowedExtensions}) async => const [],
+      ));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(demoSignIn('demo_student'));
+      await tester.pumpAndSettle();
+      await tester.tap(demoSignIn('demo_student'));
+      await tester.pumpAndSettle();
+      expect(find.byType(LoginScreen), findsOneWidget);
+      final fields = tester.widgetList<EditableText>(find.byType(EditableText)).map((e) => e.controller.text).toList();
+      expect(fields, containsAll(['demo_student', 'Password@123']));
+      await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppShell), findsOneWidget);
+      expect(find.text('Student dashboard'), findsOneWidget);
     });
   });
 

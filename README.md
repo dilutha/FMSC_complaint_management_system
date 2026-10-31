@@ -98,7 +98,7 @@ python manage.py createsuperuser      # optional: your own administrator account
 
 `python manage.py seed_demo_users` creates or updates one account per role. It can be re-run safely and never creates duplicates. It refuses to run unless `DJANGO_DEBUG=true`, or unless `FMSC_ALLOW_DEMO_USERS=true` is set deliberately.
 
-All demo accounts use the password **`Password@123`**. It is stored hashed (PBKDF2), like any other password.
+All demo accounts use the password **`Password@123`**. In development builds, the public home page lists them under *Try the System with Demo Accounts*, with a button that opens sign-in pre-filled. It is stored hashed (PBKDF2), like any other password.
 
 > **This is a development-only password.** Never use it for real accounts, and never run `seed_demo_users` against production.
 
@@ -194,6 +194,7 @@ flutter pub get
 flutter test
 flutter run -d chrome    # web → http://127.0.0.1:8000 (Android emulator defaults to http://10.0.2.2:8000)
 flutter run -d chrome --dart-define=API_TIMEOUT_SECONDS=30    # optional: change the 20 s request timeout
+flutter build web --dart-define=SHOW_DEMO_ACCOUNTS=true   # show the demo-account list in a release build (it shows automatically with flutter run)
 flutter test test/live/live_api_test.dart --dart-define=LIVE_API_BASE_URL=http://127.0.0.1:8000/api/v1/   # read-only check against a running backend
 flutter run --dart-define=API_BASE_URL=http://<host>:8000/api/v1/   # any other backend address
 ```

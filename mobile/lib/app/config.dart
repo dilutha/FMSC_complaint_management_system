@@ -22,6 +22,11 @@ abstract final class AppConfig {
     return androidEmulator ? 'http://10.0.2.2:8000/api/v1/' : 'http://127.0.0.1:8000/api/v1/';
   }
 
+  /// Show the demo-account list on the public home page. On in development
+  /// builds (`flutter run`); off in release builds unless enabled on purpose with
+  /// --dart-define=SHOW_DEMO_ACCOUNTS=true (for example for a demo server).
+  static const showDemoAccounts = kDebugMode || bool.fromEnvironment('SHOW_DEMO_ACCOUNTS');
+
   /// Human-readable server address for error messages, e.g. "127.0.0.1:8000".
   static String get serverLabel {
     final uri = Uri.tryParse(apiBaseUrl);

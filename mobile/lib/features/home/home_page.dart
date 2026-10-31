@@ -1,19 +1,37 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../../app/config.dart';
 
 import '../../design/theme.dart';
 import '../../design/tokens.dart';
 import '../../design/usj_colors.dart';
 import '../../design/widgets.dart';
+import 'demo_accounts.dart';
 
 /// Public landing page (no sign-in needed). Colours come only from the official
 /// USJ palette (docs/DESIGN_SYSTEM.md) on neutral backgrounds; light tints are
 /// those same colours at low opacity. Content describes what the app actually
 /// does: no statistics, testimonials, guarantees or invented contact details.
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.onLogin, this.onDashboard});
+  const HomePage({
+    super.key,
+    required this.onLogin,
+    this.onDashboard,
+    this.onDemoLogin,
+    this.showDemoAccounts = AppConfig.showDemoAccounts,
+  });
 
   /// Opens the existing sign-in screen.
   final VoidCallback onLogin;
+
+  /// Opens sign-in pre-filled with a demo account; falls back to [onLogin].
+  final void Function(String username, String password)? onDemoLogin;
+
+  /// Whether to list the development demo accounts (see AppConfig.showDemoAccounts).
+  final bool showDemoAccounts;
 
   /// Set when the user is already signed in: replaces the Login actions.
   final VoidCallback? onDashboard;
@@ -27,6 +45,7 @@ enum _Section {
   about('About the System'),
   how('How It Works'),
   groups('User Groups'),
+  demo('Demo Accounts'),
   faq('FAQ');
 
   const _Section(this.label);
@@ -34,6 +53,9 @@ enum _Section {
 }
 
 class _HomePageState extends State<HomePage> {
+  /// Demo accounts only make sense to visitors who are not signed in.
+  bool get _showDemo => widget.showDemoAccounts && widget.onDashboard == null;
+
   final _scroll = ScrollController();
   final _keys = {for (final s in _Section.values) s: GlobalKey()};
 
@@ -60,7 +82,12 @@ class _HomePageState extends State<HomePage> {
     final primaryLabel = widget.onDashboard == null ? 'Login' : 'Go to my dashboard';
     return Scaffold(
       backgroundColor: UsjColors.background,
-      appBar: _NavBar(onSection: _go, actionLabel: primaryLabel, onAction: primaryAction),
+      appBar: _NavBar(
+        onSection: _go,
+        actionLabel: primaryLabel,
+        onAction: primaryAction,
+        sections: [for (final s in _Section.values) if (s != _Section.demo || _showDemo) s],
+      ),
       body: SingleChildScrollView(
         controller: _scroll,
         child: Column(
@@ -71,6 +98,7 @@ class _HomePageState extends State<HomePage> {
               primaryLabel: widget.onDashboard == null ? 'Login to Get Started' : 'Go to my dashboard',
               onPrimary: primaryAction,
               onExplore: () => _go(_Section.how),
+              onDemo: _showDemo ? () => _go(_Section.demo) : null,
             ),
             _SectionShell(key: _keys[_Section.about], title: 'About the System', subtitle: _aboutIntro,
                 child: const _OverviewGrid()),
@@ -93,6 +121,18 @@ class _HomePageState extends State<HomePage> {
               tinted: true,
               child: _Departments(),
             ),
+            if (_showDemo)
+              _SectionShell(
+                key: _keys[_Section.demo],
+                title: 'Try the System with Demo Accounts',
+                subtitle: 'Sign in as any of these accounts to see how the system works for each user group.',
+                tinted: true,
+                child: _DemoAccounts(
+                  onUse: (username) => widget.onDemoLogin != null
+                      ? widget.onDemoLogin!(username, demoPassword)
+                      : widget.onLogin(),
+                ),
+              ),
             const _SectionShell(title: 'Why Use It', child: _Benefits()),
             _SectionShell(
               key: _keys[_Section.faq],
@@ -116,8 +156,9 @@ const _aboutIntro =
 // --- Navigation -------------------------------------------------------------------------------
 
 class _NavBar extends StatelessWidget implements PreferredSizeWidget {
-  const _NavBar({required this.onSection, required this.actionLabel, required this.onAction});
+  const _NavBar({required this.onSection, required this.actionLabel, required this.onAction, required this.sections});
   final ValueChanged<_Section> onSection;
+  final List<_Section> sections;
   final String actionLabel;
   final VoidCallback onAction;
 
@@ -128,7 +169,7 @@ class _NavBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     // Inline links only when they fit beside the logo, title and Login button.
-    final wide = width >= 1240;
+    final wide = width >= 1360;
     return Material(
       color: UsjColors.surface,
       elevation: 1,
@@ -173,14 +214,14 @@ class _NavBar extends StatelessWidget implements PreferredSizeWidget {
               ),
               const SizedBox(width: Space.sm),
               if (wide)
-                for (final s in _Section.values)
+                for (final s in sections)
                   TextButton(onPressed: () => onSection(s), child: Text(s.label))
               else
                 PopupMenuButton<_Section>(
                   tooltip: 'Menu',
                   icon: const Icon(Icons.menu, color: UsjColors.maroon),
                   onSelected: onSection,
-                  itemBuilder: (_) => [for (final s in _Section.values) PopupMenuItem(value: s, child: Text(s.label))],
+                  itemBuilder: (_) => [for (final s in sections) PopupMenuItem(value: s, child: Text(s.label))],
                 ),
               const SizedBox(width: Space.sm),
               width < 420
@@ -197,10 +238,11 @@ class _NavBar extends StatelessWidget implements PreferredSizeWidget {
 // --- Hero -------------------------------------------------------------------------------------
 
 class _Hero extends StatelessWidget {
-  const _Hero({super.key, required this.primaryLabel, required this.onPrimary, required this.onExplore});
+  const _Hero({super.key, required this.primaryLabel, required this.onPrimary, required this.onExplore, this.onDemo});
   final String primaryLabel;
   final VoidCallback onPrimary;
   final VoidCallback onExplore;
+  final VoidCallback? onDemo;
 
   @override
   Widget build(BuildContext context) {
@@ -262,6 +304,13 @@ class _Hero extends StatelessWidget {
               icon: const Icon(Icons.south),
               label: const Text('Explore How It Works'),
             ),
+            if (onDemo != null)
+              TextButton.icon(
+                onPressed: onDemo,
+                style: TextButton.styleFrom(foregroundColor: UsjColors.yellow, minimumSize: const Size(200, 52)),
+                icon: const Icon(Icons.badge_outlined),
+                label: const Text('Try a demo account'),
+              ),
           ],
         ),
       ],
@@ -506,6 +555,7 @@ class _Reveal extends StatefulWidget {
 class _RevealState extends State<_Reveal> {
   bool _shown = false;
   ScrollPosition? _position;
+  Timer? _delay;
 
   @override
   void didChangeDependencies() {
@@ -526,7 +576,7 @@ class _RevealState extends State<_Reveal> {
     if (box == null || !box.hasSize) return;
     final top = box.localToGlobal(Offset.zero).dy;
     if (top < MediaQuery.sizeOf(context).height - 40) {
-      Future.delayed(Duration(milliseconds: widget.delay), () {
+      _delay = Timer(Duration(milliseconds: widget.delay), () {
         if (mounted) setState(() => _shown = true);
       });
       _position?.removeListener(_check);
@@ -535,6 +585,7 @@ class _RevealState extends State<_Reveal> {
 
   @override
   void dispose() {
+    _delay?.cancel();
     _position?.removeListener(_check);
     super.dispose();
   }
@@ -807,6 +858,154 @@ class _Departments extends StatelessWidget {
   }
 }
 
+/// Development demo accounts (from seed_demo_users), grouped by user group.
+class _DemoAccounts extends StatelessWidget {
+  const _DemoAccounts({required this.onUse});
+  final ValueChanged<String> onUse;
+
+  static const _groupColors = {
+    'Complainers': UsjColors.red,
+    'Admins': UsjColors.blue,
+    'Case Administrators': UsjColors.gold,
+    'Resolving Departments': UsjColors.maroon,
+    'Read-only viewer': UsjColors.neutral,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          container: true,
+          child: Container(
+            padding: const EdgeInsets.all(Space.lg),
+            decoration: BoxDecoration(
+              color: UsjColors.warningBg,
+              borderRadius: BorderRadius.circular(Radii.md),
+              border: Border.all(color: UsjColors.gold),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_outline, color: UsjColors.warning),
+                const SizedBox(width: Space.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: Space.sm,
+                        children: [
+                          const Text('Password for every demo account:', style: TextStyle(fontWeight: FontWeight.w700)),
+                          _Copyable(text: demoPassword, label: 'password'),
+                        ],
+                      ),
+                      const SizedBox(height: Space.xs),
+                      const Text(
+                        'For demonstration and testing only. These accounts exist only on development databases '
+                        '(created with "python manage.py seed_demo_users"). Never use this password for a real account.',
+                        style: TextStyle(color: UsjColors.warning, height: 1.45),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: Space.lg),
+        _Grid(
+          maxColumns: 3,
+          children: [
+            for (final a in demoAccounts)
+              _HoverCard(
+                accent: _groupColors[a.group],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(height: 5, color: _groupColors[a.group]),
+                    Padding(
+                      padding: const EdgeInsets.all(Space.lg),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(a.group.toUpperCase(),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                  color: UsjColors.textSecondary, letterSpacing: 0.8, fontWeight: FontWeight.w700)),
+                          const SizedBox(height: Space.xs),
+                          Text(a.role, style: theme.textTheme.titleMedium),
+                          const SizedBox(height: Space.sm),
+                          _Copyable(text: a.username, label: 'username'),
+                          const SizedBox(height: Space.sm),
+                          Text('Opens: ${a.landsOn}', style: const TextStyle(color: UsjColors.textSecondary)),
+                          const SizedBox(height: Space.xs),
+                          Text(a.tryThis, style: const TextStyle(height: 1.45)),
+                          const SizedBox(height: Space.md),
+                          Semantics(
+                            button: true,
+                            label: 'Sign in as ${a.username}',
+                            excludeSemantics: true,
+                            child: OutlinedButton.icon(
+                              onPressed: () => onUse(a.username),
+                              icon: const Icon(Icons.login, size: 18),
+                              label: const Text('Sign in as this user'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Monospace value with a copy button (usernames and the demo password).
+class _Copyable extends StatelessWidget {
+  const _Copyable({required this.text, required this.label});
+  final String text;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.only(left: Space.sm),
+      decoration: BoxDecoration(
+        color: UsjColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(Radii.sm),
+        border: Border.all(color: UsjColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: SelectableText(text,
+                style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w700, fontSize: 15)),
+          ),
+          IconButton(
+            tooltip: 'Copy $label',
+            iconSize: 18,
+            icon: const Icon(Icons.copy),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: text));
+              ScaffoldMessenger.maybeOf(context)
+                ?..hideCurrentSnackBar()
+                ..showSnackBar(SnackBar(content: Text('Copied $label "$text"')));
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Benefits extends StatelessWidget {
   const _Benefits();
 
@@ -991,7 +1190,7 @@ class _Footer extends StatelessWidget {
               Wrap(
                 spacing: Space.sm,
                 children: [
-                  for (final s in _Section.values)
+                  for (final s in _Section.values.where((s) => s != _Section.demo))
                     TextButton(
                       onPressed: () => onSection(s),
                       style: TextButton.styleFrom(foregroundColor: UsjColors.yellow),

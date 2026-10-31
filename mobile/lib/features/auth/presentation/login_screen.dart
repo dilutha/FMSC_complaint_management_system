@@ -10,7 +10,11 @@ import '../../../platform/platform_scope.dart';
 /// Sign-in with university username or email. Replaces the case module's
 /// placeholder sign-in screen (shared contract: AuthSession).
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, this.serverLabel});
+  const LoginScreen({super.key, this.serverLabel, this.initialUsername = '', this.initialPassword = ''});
+
+  /// Pre-filled from the home page's demo-account list (development demos only).
+  final String initialUsername;
+  final String initialPassword;
 
   /// Server address shown in connection errors; defaults to [AppConfig.serverLabel].
   final String? serverLabel;
@@ -21,8 +25,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _username = TextEditingController();
-  final _password = TextEditingController();
+  late final _username = TextEditingController(text: widget.initialUsername);
+  late final _password = TextEditingController(text: widget.initialPassword);
   bool _busy = false;
   bool _obscure = true;
   String? _error;
